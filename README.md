@@ -15,16 +15,16 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/6/12      |登陆                          |
-|setCookie           |2018/6/12      |导入Cookie                    |
+|login               |2018/6/12      |登录                          |
+|importCookie        |2018/6/12      |导入Cookie                    |
 |getUserInfo         |2018/6/12      |查询主站用户信息              |
 |getLiveInfo         |2018/6/12      |查询直播站用户信息            |
-|silverToCoin        |2018/6/12      |银瓜子兑硬币                  |
-|silverToCoinOld     |2018/6/12      |银瓜子兑硬币(旧API)           |
+|silverToCoin        |2018/6/12      |银瓜子兑换硬币                |
+|silverToCoin2       |2018/6/12      |银瓜子兑换硬币(旧API)         |
 |watchVideo          |2018/6/12      |观看视频                      |
 |giveCoin            |2018/6/12      |投币                          |
 |shareVideo          |2018/6/12      |分享视频                      |
-|addFavourite        |2018/6/12      |收藏                          |
+|addFavourite        |2018/6/12      |收藏视频                      |
 
 ## 使用指南
 
