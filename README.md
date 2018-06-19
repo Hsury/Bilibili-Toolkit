@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.6.12-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.6.20-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -49,7 +49,6 @@ $ python3 bilibili.py
 |修改账号资料   |
 |异步执行任务   |
 |自动更新代理   |
-|日志系统       |
 |图形界面       |
 |<未完待续>     |
 
