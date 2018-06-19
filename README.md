@@ -15,16 +15,14 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/6/12      |登录                          |
-|importCookie        |2018/6/12      |导入Cookie                    |
-|getUserInfo         |2018/6/12      |查询主站用户信息              |
-|getLiveInfo         |2018/6/12      |查询直播站用户信息            |
-|silverToCoin        |2018/6/12      |银瓜子兑换硬币                |
-|silverToCoin2       |2018/6/12      |银瓜子兑换硬币(旧API)         |
-|watchVideo          |2018/6/12      |观看视频                      |
-|giveCoin            |2018/6/12      |投币                          |
-|shareVideo          |2018/6/12      |分享视频                      |
-|addFavourite        |2018/6/12      |收藏视频                      |
+|login               |2018/6/20      |登录                          |
+|importCookie        |2018/6/20      |导入Cookie                    |
+|query               |2018/6/20      |获取用户信息                  |
+|silver2Coins        |2018/6/20      |银瓜子兑换硬币                |
+|watch               |2018/6/20      |观看视频                      |
+|reward              |2018/6/20      |投币                          |
+|share               |2018/6/20      |分享视频                      |
+|favour              |2018/6/20      |收藏视频                      |
 
 ## 使用指南
 
@@ -33,7 +31,7 @@
 ```
 $ git clone https://github.com/Hsury/Bilibili-Toolkit.git
 $ cd Bilibili-Toolkit
-$ vi bilibili.py
+$ nano bilibili.py
 ```
 
 2. 启动脚本
