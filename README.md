@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.6.23-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.6.25-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -40,7 +40,7 @@ $ nano bilibili.py
 2. 使用Python 3.6启动脚本
 
 ```
-$ python3 bilibili.py
+$ python3.6 bilibili.py
 ```
 
 ## 计划
@@ -50,7 +50,6 @@ $ python3 bilibili.py
 |视频点赞       |
 |关注用户       |
 |修改账号资料   |
-|异步执行任务   |
 |自动更新代理   |
 |图形界面       |
 |<未完待续>     |
