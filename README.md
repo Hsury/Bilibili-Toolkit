@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.6.25-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.6.26-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -37,7 +37,13 @@ $ cd Bilibili-Toolkit
 $ nano bilibili.py
 ```
 
-2. 使用Python 3.6启动脚本
+2. 使用pip安装所需依赖
+
+```
+$ python3.6 -m pip install requests rsa
+```
+
+3. 使用Python 3.6启动脚本
 
 ```
 $ python3.6 bilibili.py

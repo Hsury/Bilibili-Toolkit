@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.6
+# -*- coding: utf-8 -*-
 
 import base64
 import datetime
@@ -25,12 +26,12 @@ cookiesFile = ""
 # 任务列表
 tasks = {'query': True, # 获取用户信息
          'silver2Coins': True, # 银瓜子兑换硬币
-         'watch': True, # 观看视频
+         'watch': False, # 观看视频
          'reward': True, # 投币
-         'share': True, # 分享视频
+         'share': False, # 分享视频
          'favour': True, # 收藏视频
-         'mallAssist': True, # 会员购周年庆活动助力
-         'mallLuckyDraw': True, # 会员购周年庆活动抽奖
+         'mallAssist': False, # 会员购周年庆活动助力
+         'mallLuckyDraw': False, # 会员购周年庆活动抽奖
          'mallPrize': True} # 会员购周年庆活动中奖查询
 
 # av列表
@@ -52,7 +53,7 @@ processPoolCap = 10
 # 使用用户名与密码进行登录时应避免使用代理, 以防止出现账号异常
 useProxy = False
 # HTTP代理列表
-proxies = ["59.44.16.6:8080", "119.28.118.116:1080", "116.62.139.136:3128", "101.96.10.5:80", "218.59.139.238:80", "121.8.98.197:80", "101.248.64.66:8080", "89.236.17.106:3128", "221.182.133.87:27", "101.248.64.69:8080", "221.228.17.172:8181", "220.167.170.154:8060", "61.136.163.245:3128", "14.118.253.236:6666", "47.94.230.42:9999", "116.62.196.146:3128", "219.141.153.2:8080", "122.114.31.177:808", "39.104.122.119:8888", "118.114.77.47:8080", "117.131.235.198:8060", "221.7.255.168:8080", "117.127.0.205:8080", "49.51.193.134:1080", "101.248.64.66:80", "118.24.128.46:1080", "103.78.213.147:80", "219.141.153.12:80", "95.154.70.151:53281", "124.238.235.135:8000", "180.168.251.28:80", "197.250.8.162:65103", "101.236.35.98:8866", "185.85.21.6:53281", "121.8.98.198:80", "118.25.104.254:1080", "101.236.60.8:8866", "60.255.186.169:8888", "125.86.122.219:8197", "61.135.217.7:80", "117.28.255.215:3128", "118.31.220.3:8080", "117.202.20.68:556", "117.127.0.210:80", "42.104.84.107:8080", "222.88.147.121:8060", "116.226.113.49:9797", "39.137.69.8:8080", "101.248.64.69:80", "112.115.57.20:3128", "120.76.77.152:9999", "101.37.79.125:3128", "31.25.141.46:53281", "118.24.172.149:1080", "124.42.7.103:80", "219.147.153.185:8080", "101.236.60.225:8866", "42.104.84.106:8080", "117.127.0.209:80", "218.207.212.86:80", "115.28.209.249:3128", "119.188.162.165:8081", "202.100.83.139:80", "49.51.193.128:1080", "119.10.67.144:808", "113.200.56.13:8010", "112.25.60.32:8080", "59.44.16.6:80", "49.51.70.42:1080", "221.7.255.168:80", "114.215.95.188:3128", "118.190.95.26:9001", "140.143.96.216:80", "125.77.25.120:80", "39.104.168.160:3128", "121.42.167.160:3128", "140.205.222.3:80", "39.137.69.6:8080", "14.118.255.19:6666", "122.183.139.104:8080", "118.190.95.43:9001", "139.224.24.26:8888", "121.43.60.109:3128", "221.14.140.66:80", "120.77.254.116:3128", "218.87.56.43:8060", "114.139.176.174:8888", "117.127.0.196:8080", "124.235.208.252:443", "118.212.137.135:31288", "217.61.106.183:80", "219.141.153.2:80", "220.143.185.92:3128", "194.88.105.156:3128", "119.54.15.114:8888", "59.44.16.6:8000", "66.82.144.29:8080", "117.127.0.196:80", "117.127.0.209:8080", "121.231.154.102:6666", "111.231.203.226:3128", "218.28.131.34:3128", "120.131.9.254:1080", "180.118.128.188:9000", "118.190.95.35:9001", "180.101.205.253:8888", "101.236.19.165:8866", "107.21.56.41:8080"]
+proxies = ["59.44.16.6:8080", "119.28.118.116:1080", "101.236.60.52:8866", "101.96.10.5:80", "202.100.83.139:80", "222.222.250.143:8060", "221.228.17.172:8181", "61.136.163.245:3128", "114.228.74.59:6666", "115.154.21.255:5555", "47.94.230.42:9999", "116.62.196.146:3128", "119.10.67.144:808", "118.212.137.135:31288", "113.222.42.217:8060", "114.24.130.119:1080", "188.244.5.229:3128", "118.114.77.47:8080", "60.165.54.144:8060", "117.127.0.205:8080", "61.135.217.7:80", "223.99.214.21:53281", "180.168.251.28:80", "113.200.241.202:63000", "121.8.98.198:80", "110.185.227.236:9999", "60.255.186.169:8888", "180.150.191.251:8888", "66.82.144.29:8080", "49.51.193.128:1080", "218.26.227.108:80", "42.104.84.107:8080", "101.236.18.101:8866", "39.137.69.8:8080", "112.115.57.20:3128", "120.76.77.152:9999", "101.37.79.125:3128", "219.147.153.185:8080", "14.20.235.201:9797", "101.96.10.4:80", "222.175.73.14:8060", "163.125.149.196:9797", "218.207.212.86:80", "220.130.205.58:8080", "119.188.162.165:8081", "95.172.37.162:8080", "91.192.2.168:53281", "113.200.56.13:8010", "115.148.246.146:8060", "125.118.241.81:6666", "59.44.16.6:80", "1.196.161.241:9999", "49.51.70.42:1080", "101.236.21.22:8866", "112.25.60.32:8080", "114.215.95.188:3128", "222.33.192.238:8118", "118.190.95.26:9001", "117.127.0.198:8080", "125.77.25.120:80", "117.127.0.197:80", "88.99.149.188:31288", "49.51.195.24:1080", "47.100.102.173:10010", "39.137.69.6:8080", "221.234.160.17:8197", "139.224.24.26:8888", "113.200.159.155:9999", "118.190.95.43:9001", "117.127.0.209:80", "118.24.89.206:1080", "122.114.31.177:808", "39.105.78.30:8099", "49.51.68.122:1080", "219.146.153.249:8080", "221.234.246.183:8197", "117.156.234.3:8060", "120.35.100.80:6666", "117.127.0.196:8080", "124.235.208.252:443", "111.155.116.221:8123", "111.121.193.214:3128", "125.72.70.46:8060", "125.86.125.54:8197", "59.44.16.6:8000", "117.127.0.196:80", "117.127.0.209:8080", "218.56.132.154:8080", "101.236.19.165:8866", "223.68.190.130:8181", "111.231.203.226:3128", "119.122.213.58:9000", "118.190.95.35:9001", "180.101.205.253:8888", "118.31.220.3:8080", "107.21.56.41:8080"]
 
 class Bilibili():
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
@@ -122,7 +123,7 @@ class Bilibili():
         url = "https://passport.bilibili.com/api/oauth2/getKey"
         data = {'appkey': appKey, 'sign': self.getSign(f"appkey={appKey}")}
         response = self.post(url, data=data)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             keyHash = str(response['data']['hash'])
             pubKey = rsa.PublicKey.load_pkcs1_openssl_pem(response['data']['key'].encode())
         else:
@@ -133,7 +134,7 @@ class Bilibili():
         data = f"{param}&sign={self.getSign(param)}"
         headers = {'Content-type': "application/x-www-form-urlencoded"}
         response = self.post(url, data=data, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.cookie = ";".join(f"{i['name']}={i['value']}" for i in response['data']['cookie_info']['cookies'])
             self.csrf = response['data']['cookie_info']['cookies'][0]['value']
             self.uid = response['data']['cookie_info']['cookies'][1]['value']
@@ -166,7 +167,7 @@ class Bilibili():
                    'Referer': "https://account.bilibili.com/account/home",
                    'User-Agent': Bilibili.ua}
         response = self.get(url, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.info['main']['level'] = response['data']['level_info']['current_level']
             self.info['main']['experience']['current'] = response['data']['level_info']['current_exp']
             self.info['main']['experience']['next'] = response['data']['level_info']['next_exp']
@@ -186,7 +187,7 @@ class Bilibili():
                    'Host': "api.live.bilibili.com",
                    'User-Agent': Bilibili.ua}
         response = self.get(url, headers=headers)
-        if response and response['code'] == "REPONSE_OK":
+        if response and response.get('code') == "REPONSE_OK":
             self.info['nickname'] = response['data']['uname']
             self.info['face'] = response['data']['face']
             self.info['coins'] = response['data']['billCoin']
@@ -218,7 +219,7 @@ class Bilibili():
                    'Referer': "https://live.bilibili.com/exchange",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log("银瓜子兑换硬币(通道1)成功")
         else:
             self.log(f"银瓜子兑换硬币(通道1)失败 {response}")
@@ -227,7 +228,7 @@ class Bilibili():
                    'Host': "api.live.bilibili.com",
                    'User-Agent': Bilibili.ua}
         response = self.get(url, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log("银瓜子兑换硬币(通道2)成功")
         else:
             self.log(f"银瓜子兑换硬币(通道2)失败 {response}")
@@ -280,7 +281,7 @@ class Bilibili():
                    'Referer': f"https://www.bilibili.com/video/av{aid}",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log(f"av{aid}投{'2' if double else '1'}枚硬币成功")
             return True
         else:
@@ -300,7 +301,7 @@ class Bilibili():
                    'Referer': f"https://www.bilibili.com/video/av{aid}",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log(f"av{aid}分享成功")
             return True
         else:
@@ -315,7 +316,7 @@ class Bilibili():
                    'Host': "api.bilibili.com",
                    'User-Agent': Bilibili.ua}
         response = self.get(url, headers=headers)
-        if response:
+        if response and response.get('data'):
             fid = response['data'][0]['fid']
         else:
             self.log("fid获取失败")
@@ -331,7 +332,7 @@ class Bilibili():
                    'Referer': f"https://www.bilibili.com/video/av{aid}",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log(f"av{aid}收藏成功")
             return True
         else:
@@ -366,7 +367,7 @@ class Bilibili():
                    'Referer': f"https://www.bilibili.com/blackboard/mall/activity-B1oZiV-Z7.html?uid={mid}",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=json.dumps(data), headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log(f"{beAssistedUserUname}({mid})会员购周年庆活动助力成功")
             return True
         else:
@@ -392,11 +393,11 @@ class Bilibili():
                    'User-Agent': Bilibili.ua}
         while True:
             response = self.post(url, data=json.dumps(data), headers=headers)
-            if response:
+            if response and response.get('code') is not None:
                 if response['code'] == 0:
                     self.log(f"从{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == response['data']['jackpotId']), '未知宝库')}中抽到了{response['data']['prizeName']}, 还剩余{response['data']['remainPopularValue']}把钥匙")
                 elif response['code'] == 83110025:
-                    self.log("奖池不存在")
+                    self.log(f"奖池(ID={data['jackpotId']})不存在, 停止碰撞新奖池ID")
                     break
                 elif response['code'] == 83110026:
                     self.log(f"奖池(ID={data['jackpotId']})已失效, 尝试碰撞新奖池ID")
@@ -429,7 +430,7 @@ class Bilibili():
                    'Referer': "https://www.bilibili.com/blackboard/mall/activity-B1oZiV-Z7.html",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=json.dumps(data), headers=headers)
-        if response and response['code'] == 0:
+        if response and response.get('code') == 0:
             self.log("会员购周年庆活动中奖查询成功")
             prizeNames = [prize['prizeName'] for prize in response['data']]
             prizeNames.sort()
