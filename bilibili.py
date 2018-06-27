@@ -4,14 +4,18 @@
 import base64
 import datetime
 import hashlib
+import io
 import json
 import random
 import re
 import requests
 import rsa
+import sys
 import time
 from multiprocessing import Pool
 from urllib import parse
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 # 登录方式(优先级由高至低, 留空跳过)
 # 1. 用户名与密码
@@ -29,10 +33,12 @@ tasks = {'query': True, # 获取用户信息
          'watch': False, # 观看视频
          'reward': True, # 投币
          'share': False, # 分享视频
-         'favour': True, # 收藏视频
+         'favour': False, # 收藏视频
+         'likeComment': False, # 评论点赞
+         'rushComment': False, # 评论抢楼
          'mallAssist': False, # 会员购周年庆活动助力
          'mallLuckyDraw': False, # 会员购周年庆活动抽奖
-         'mallPrize': True} # 会员购周年庆活动中奖查询
+         'mallPrize': False} # 会员购周年庆活动中奖查询
 
 # av列表
 avs = [20032006, 14594803, 14361946]
@@ -40,8 +46,15 @@ avs = [20032006, 14594803, 14361946]
 # 双倍投币
 doubleRewards = True
 
+# 评论相关
+# otype为作品类型(视频对应video, 相簿对应gallery, 文章对应article), oid为作品ID
+# 点赞评论列表(rpid为评论ID)
+likeComments = [{'otype': "video", 'oid': 25581792, 'rpid': 861027737}, {'otype': "article", 'oid': 617468, 'rpid': 864171896}]
+# 抢楼评论(floor为抢楼楼层, message为评论内容)
+rushComment = {'otype': "video", 'oid': 25581792, 'floor': 2233, 'message': "哔哩哔哩 (゜-゜)つロ 干杯~"}
+
 # 会员购周年庆活动助力用户UID列表
-beAssistedUIDs = [124811915]
+beAssistedUIDs = [124811915, 44587175]
 
 # 导出Cookie到文件, 留空则不导出
 exportCookie = "Bilibili-Cookies.txt"
@@ -53,7 +66,7 @@ processPoolCap = 10
 # 使用用户名与密码进行登录时应避免使用代理, 以防止出现账号异常
 useProxy = False
 # HTTP代理列表
-proxies = ["59.44.16.6:8080", "119.28.118.116:1080", "101.236.60.52:8866", "101.96.10.5:80", "202.100.83.139:80", "222.222.250.143:8060", "221.228.17.172:8181", "61.136.163.245:3128", "114.228.74.59:6666", "115.154.21.255:5555", "47.94.230.42:9999", "116.62.196.146:3128", "119.10.67.144:808", "118.212.137.135:31288", "113.222.42.217:8060", "114.24.130.119:1080", "188.244.5.229:3128", "118.114.77.47:8080", "60.165.54.144:8060", "117.127.0.205:8080", "61.135.217.7:80", "223.99.214.21:53281", "180.168.251.28:80", "113.200.241.202:63000", "121.8.98.198:80", "110.185.227.236:9999", "60.255.186.169:8888", "180.150.191.251:8888", "66.82.144.29:8080", "49.51.193.128:1080", "218.26.227.108:80", "42.104.84.107:8080", "101.236.18.101:8866", "39.137.69.8:8080", "112.115.57.20:3128", "120.76.77.152:9999", "101.37.79.125:3128", "219.147.153.185:8080", "14.20.235.201:9797", "101.96.10.4:80", "222.175.73.14:8060", "163.125.149.196:9797", "218.207.212.86:80", "220.130.205.58:8080", "119.188.162.165:8081", "95.172.37.162:8080", "91.192.2.168:53281", "113.200.56.13:8010", "115.148.246.146:8060", "125.118.241.81:6666", "59.44.16.6:80", "1.196.161.241:9999", "49.51.70.42:1080", "101.236.21.22:8866", "112.25.60.32:8080", "114.215.95.188:3128", "222.33.192.238:8118", "118.190.95.26:9001", "117.127.0.198:8080", "125.77.25.120:80", "117.127.0.197:80", "88.99.149.188:31288", "49.51.195.24:1080", "47.100.102.173:10010", "39.137.69.6:8080", "221.234.160.17:8197", "139.224.24.26:8888", "113.200.159.155:9999", "118.190.95.43:9001", "117.127.0.209:80", "118.24.89.206:1080", "122.114.31.177:808", "39.105.78.30:8099", "49.51.68.122:1080", "219.146.153.249:8080", "221.234.246.183:8197", "117.156.234.3:8060", "120.35.100.80:6666", "117.127.0.196:8080", "124.235.208.252:443", "111.155.116.221:8123", "111.121.193.214:3128", "125.72.70.46:8060", "125.86.125.54:8197", "59.44.16.6:8000", "117.127.0.196:80", "117.127.0.209:8080", "218.56.132.154:8080", "101.236.19.165:8866", "223.68.190.130:8181", "111.231.203.226:3128", "119.122.213.58:9000", "118.190.95.35:9001", "180.101.205.253:8888", "118.31.220.3:8080", "107.21.56.41:8080"]
+proxies = ["58.251.234.144:9797", "59.44.16.6:8080", "116.62.139.136:3128", "101.96.10.5:80", "114.212.12.4:3128", "218.59.139.238:80", "119.28.21.144:8080", "117.127.0.210:80", "114.115.169.31:3128", "61.136.163.245:3128", "113.222.42.12:8060", "118.24.157.22:3128", "47.94.230.42:9999", "116.62.196.146:3128", "39.106.160.36:3128", "87.103.234.116:3128", "182.113.85.216:8118", "24.132.146.51:80", "122.114.31.177:808", "39.104.122.119:8888", "124.118.31.104:8060", "118.114.77.47:8080", "220.169.232.132:808", "122.72.18.34:80", "221.7.255.168:8080", "117.127.0.205:8080", "116.226.65.250:8060", "116.62.115.14:3128", "60.169.6.150:8080", "58.247.46.123:8088", "61.135.217.7:80", "118.24.156.163:8080", "115.192.193.211:8060", "92.38.47.226:80", "117.45.230.214:3128", "101.236.35.98:8866", "121.8.98.198:80", "212.49.84.113:65103", "118.24.61.22:3128", "118.31.220.3:8080", "118.212.137.135:31288", "166.111.80.162:3128", "42.104.84.107:8080", "39.137.69.8:8080", "39.105.78.30:3128", "112.115.57.20:3128", "183.179.199.225:8080", "101.37.79.125:3128", "219.147.153.185:8080", "122.72.18.35:80", "101.96.10.4:80", "101.236.60.225:8866", "117.127.0.209:80", "218.207.212.86:80", "119.188.162.165:8081", "202.100.83.139:80", "117.127.0.198:80", "119.10.67.144:808", "113.200.56.13:8010", "222.88.154.56:8060", "222.88.147.104:8060", "221.1.205.74:8060", "124.238.235.135:8000", "218.201.55.74:63000", "112.25.60.32:8080", "59.44.16.6:80", "221.7.255.168:80", "114.215.95.188:3128", "222.33.192.238:8118", "119.39.48.205:9090", "121.17.18.219:8060", "125.77.25.120:80", "39.104.168.160:3128", "222.85.31.177:8060", "121.42.167.160:3128", "223.99.25.194:80", "39.137.69.6:8080", "115.28.90.79:9001", "119.122.31.52:9000", "140.143.224.79:3128", "139.224.24.26:8888", "118.190.95.43:9001", "223.197.56.102:80", "117.127.0.204:80", "219.146.153.249:8080", "223.96.95.229:3128", "117.127.0.197:80", "221.234.246.183:8197", "124.235.208.252:443", "61.183.172.164:9090", "60.250.79.187:80", "139.129.99.9:3128", "59.44.16.6:8000", "117.127.0.196:80", "101.236.19.165:8866", "101.96.11.4:80", "117.127.0.204:8080", "42.236.123.17:80", "118.190.95.35:9001", "180.101.205.253:8888", "101.236.22.141:8866", "122.183.139.101:8080"]
 
 class Bilibili():
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
@@ -109,6 +122,7 @@ class Bilibili():
     
     def log(self, message):
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.uid}] {message}")
+        sys.stdout.flush()
     
     def getSign(self, param):
         salt = "560c52ccd288fed045859ed18bffd973"
@@ -321,6 +335,7 @@ class Bilibili():
         else:
             self.log("fid获取失败")
             return False
+        time.sleep(random.uniform(1.0, 2.0))
         url = "https://api.bilibili.com/x/v2/fav/video/add"
         data = {'aid': aid,
                 'fid': fid,
@@ -338,6 +353,96 @@ class Bilibili():
         else:
             self.log(f"av{aid}收藏失败 {response}")
             return False
+    
+    # 评论点赞
+    def likeComment(self, otype, oid, rpid):
+        # otype = 作品类型
+        # oid = 作品ID
+        # rpid = 评论ID
+        patterns = {'video': {'id': 1, 'prefix': "https://www.bilibili.com/video/av"},
+                    'gallery': {'id': 11, 'prefix': "https://h.bilibili.com/"},
+                    'article': {'id': 12, 'prefix': "https://www.bilibili.com/read/cv"}}
+        if patterns.get(otype) is None:
+            self.log("不支持的作品类型")
+            return False
+        url = "https://api.bilibili.com/x/v2/reply/action"
+        data = {'oid': oid,
+                'type': patterns[otype]['id'],
+                'rpid': rpid,
+                'action': 1,
+                'jsonp': "jsonp",
+                'csrf': self.csrf}
+        headers = {'Content-Type': "application/x-www-form-urlencoded; charset=UTF-8",
+                   'Cookie': self.cookie,
+                   'Host': "api.bilibili.com",
+                   'Origin': "https://www.bilibili.com",
+                   'Referer': f"{patterns[otype]['prefix']}{oid}",
+                   'User-Agent': Bilibili.ua}
+        response = self.post(url, data=data, headers=headers)
+        if response and response.get('code') == 0:
+            self.log(f"评论{rpid}点赞成功")
+            return True
+        else:
+            self.log(f"评论{rpid}点赞失败 {response}")
+            return False
+    
+    # 评论抢楼
+    def rushComment(self, otype, oid, floor, message):
+        # otype = 作品类型
+        # oid = 作品ID
+        # floor = 抢楼楼层
+        # message = 评论内容
+        patterns = {'video': {'id': 1, 'prefix': "https://www.bilibili.com/video/av"},
+                    'gallery': {'id': 11, 'prefix': "https://h.bilibili.com/"},
+                    'article': {'id': 12, 'prefix': "https://www.bilibili.com/read/cv"}}
+        critical = 2
+        if patterns.get(otype) is None:
+            self.log("不支持的作品类型")
+            return False
+        while True:
+            url = f"https://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={patterns[otype]['id']}&oid={oid}&sort=0&_={Bilibili.timeStamp()}"
+            headers = {'Host': "api.bilibili.com",
+                       'Referer': f"{patterns[otype]['prefix']}{oid}",
+                       'User-Agent': Bilibili.ua}
+            response = self.get(url, headers=headers)
+            if response and response.get('code') == 0:
+                currentFloor = response['data']['replies'][0]['floor']
+                deltaFloor = floor - currentFloor
+                if deltaFloor > critical:
+                    self.log(f"当前评论楼层数为{currentFloor}, 距离目标楼层还有{deltaFloor}层")
+                    time.sleep(min(3, (deltaFloor - critical - 1) * 0.1))
+                elif deltaFloor > 0:
+                    self.log("开始抢楼")
+                    url = "https://api.bilibili.com/x/v2/reply/add"
+                    data = {'oid': oid,
+                            'type': patterns[otype]['id'],
+                            'message': message,
+                            'plat': 1,
+                            'jsonp': "jsonp",
+                            'csrf': self.csrf}
+                    headers = {'Content-Type': "application/x-www-form-urlencoded; charset=UTF-8",
+                               'Cookie': self.cookie,
+                               'Host': "api.bilibili.com",
+                               'Origin': "https://www.bilibili.com",
+                               'Referer': f"{patterns[otype]['prefix']}{oid}",
+                               'User-Agent': Bilibili.ua}
+                    success = 0
+                    while True:
+                        response = self.post(url, data=data, headers=headers)
+                        if response and response.get('code') == 0:
+                            success += 1
+                            self.log(f"评论({success}/{deltaFloor})提交成功")
+                        else:
+                            self.log(f"评论({success}/{deltaFloor})提交失败 {response}")
+                        if (success >= deltaFloor):
+                            self.log("停止抢楼")
+                            break
+                else:
+                    self.log(f"当前评论楼层数为{currentFloor}, 目标楼层已过")
+                    break
+            else:
+                self.log(f"当前评论楼层数获取失败 {response}")
+                time.sleep(1)
     
     # 会员购周年庆活动助力
     def mallAssist(self, mid):
@@ -449,12 +554,20 @@ def execute(instance):
     instance.log("任务开始执行")
     if tasks['query']: instance.query()
     if tasks['silver2Coins']: instance.silver2Coins()
-    random.shuffle(avs)
-    for av in avs:
-        if tasks['watch']: instance.watch(av)
-        if tasks['reward']: instance.reward(av, doubleRewards)
-        if tasks['share']: instance.share(av)
-        if tasks['favour']: instance.favour(av)
+    if tasks['watch'] or tasks['reward'] or tasks['share'] or tasks['favour']:
+        random.shuffle(avs)
+        for av in avs:
+            if tasks['watch']: instance.watch(av)
+            if tasks['reward']: instance.reward(av, doubleRewards)
+            if tasks['share']: instance.share(av)
+            if tasks['favour']: instance.favour(av)
+            time.sleep(random.uniform(1.0, 2.0))
+    if tasks['likeComment']:
+        random.shuffle(likeComments)
+        for comment in likeComments:
+            instance.likeComment(comment['otype'], comment['oid'], comment['rpid'])
+            time.sleep(random.uniform(1.0, 2.0))
+    if tasks['rushComment']: instance.rushComment(rushComment['otype'], rushComment['oid'], rushComment['floor'], rushComment['message'])
     if tasks['mallAssist']: [instance.mallAssist(uid) for uid in beAssistedUIDs]
     if tasks['mallLuckyDraw']: instance.mallLuckyDraw()
     if tasks['mallPrize']: instance.mallPrize()
@@ -479,6 +592,8 @@ if __name__ == '__main__':
                     accounts.append(line.split("----"))
         with Pool(processPoolCap) as p:
             p.map(wrapper, [account for account in accounts])
+            p.close()
+            p.join()
     elif cookiesFile:
         cookies = []
         with open(cookiesFile) as f:
@@ -486,5 +601,7 @@ if __name__ == '__main__':
                 cookies.append([line.strip("\n")])
         with Pool(processPoolCap) as p:
             p.map(wrapper, [cookie for cookie in cookies])
+            p.close()
+            p.join()
     else:
         print("未配置登录信息")
