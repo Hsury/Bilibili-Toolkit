@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.6.27-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.6.28-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -26,8 +26,9 @@
 |likeComment         |2018/6/27      |评论点赞                      |
 |rushComment         |2018/6/27      |评论抢楼                      |
 |mallAssist          |2018/6/22      |会员购周年庆活动助力          |
-|mallLuckyDraw       |2018/6/23      |会员购周年庆活动抽奖          |
+|mallLottery         |2018/6/23      |会员购周年庆活动抽奖          |
 |mallPrize           |2018/6/23      |会员购周年庆活动中奖查询      |
+|mi6XLottery         |2018/6/28      |小米6X抢F码活动抽奖           |
 
 ## 使用指南
 
