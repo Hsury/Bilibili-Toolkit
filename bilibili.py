@@ -32,14 +32,14 @@ tasks = {'query': True, # 获取用户信息
          'reward': True, # 投币
          'share': False, # 分享视频
          'favour': False, # 收藏视频
-         'likeComment': True, # 评论点赞
-         'rushComment': False, # 评论抢楼
-         'likeDynamic': False, # 动态点赞
-         'repostDynamic': False, # 动态转发
+         'commentLike': True, # 评论点赞
+         'commentRush': False, # 评论抢楼
+         'dynamicLike': False, # 动态点赞
+         'dynamicRepost': False, # 动态转发
          'mallAssist': False, # 会员购周年庆活动助力
          'mallLottery': False, # 会员购周年庆活动抽奖
          'mallPrize': False, # 会员购周年庆活动中奖查询
-         'mi6XLottery': True} # 小米6X抢F码活动抽奖
+         'mi6XLottery': False} # 小米6X抢F码活动抽奖
 
 # av列表
 avs = [20032006, 14594803, 14361946]
@@ -72,7 +72,7 @@ processPoolCap = 10
 # 代理开关
 useProxy = False
 # HTTP代理列表
-proxies = ["59.44.16.6:8080", "119.28.118.116:1080", "116.62.139.136:3128", "101.96.10.5:80", "114.212.12.4:3128", "218.59.139.238:80", "121.58.17.52:80", "89.236.17.106:3128", "119.28.21.144:8080", "117.127.0.210:80", "121.196.211.154:3128", "114.115.169.31:3128", "180.101.205.253:8888", "175.181.40.61:8080", "218.50.2.102:8080", "118.24.157.22:3128", "47.94.230.42:9999", "116.62.196.146:3128", "118.190.95.43:9001", "39.106.160.36:3128", "222.175.200.58:8060", "223.145.229.212:6666", "122.114.31.177:808", "223.99.25.194:80", "118.114.77.47:8080", "47.252.1.152:80", "122.72.18.34:80", "221.7.255.168:8080", "60.165.54.144:8060", "117.127.0.205:8080", "49.51.193.134:1080", "101.236.60.48:8866", "116.62.115.14:3128", "60.169.6.150:8080", "58.247.46.123:8088", "221.229.44.52:808", "103.78.213.147:80", "61.135.217.7:80", "222.88.144.173:8060", "182.61.30.182:3128", "221.228.17.172:8181", "218.66.232.26:3128", "115.192.193.211:8060", "39.137.69.8:8080", "124.238.235.135:8000", "27.154.240.222:8060", "39.104.168.160:3128", "101.248.64.69:80", "121.8.98.198:80", "59.48.237.6:8060", "101.236.60.8:8866", "96.9.79.140:55555", "66.82.144.29:8080", "190.2.144.108:1080", "124.128.76.142:8060", "118.31.220.3:8080", "183.179.199.225:8080", "166.111.80.162:3128", "117.127.0.205:80", "190.2.144.107:1080", "163.172.86.64:3128", "39.105.78.30:3128", "112.115.57.20:3128", "118.24.156.163:8080", "58.87.86.75:3128", "190.242.119.220:3128", "101.37.79.125:3128", "219.147.153.185:8080", "122.72.18.35:80", "222.223.203.109:8060", "59.44.16.6:80", "122.183.139.107:8080", "47.75.53.32:80", "117.127.0.198:8080", "122.116.253.158:8082", "119.188.162.165:8081", "50.233.137.32:80", "202.100.83.139:80", "222.179.226.25:8060", "117.127.0.198:80", "119.10.67.144:808", "113.200.56.13:8010", "139.224.80.139:3128", "222.88.147.104:8060", "120.78.78.141:8888", "101.96.11.4:80", "221.7.255.168:80", "101.96.10.4:80", "185.85.21.6:53281", "49.51.70.42:1080", "101.236.21.22:8866", "112.25.60.32:8080", "114.215.95.188:3128", "222.33.192.238:8118", "119.39.48.205:9090", "118.190.95.26:9001", "114.227.17.59:6666", "39.137.77.68:80", "125.77.25.120:80", "117.127.0.197:80", "220.249.185.178:9999", "87.228.29.154:53281", "88.99.149.188:31288", "121.42.167.160:3128", "49.51.195.24:1080", "118.212.137.135:31288", "110.72.24.101:8123", "39.137.69.6:8080", "50.233.137.37:80", "115.28.90.79:9001", "83.219.142.133:3128", "47.90.87.225:88", "140.143.224.79:3128", "139.224.24.26:8888", "101.236.39.185:8866", "117.127.0.209:80", "118.24.89.206:1080", "218.173.64.129:9999", "117.127.0.204:80", "118.31.223.194:3128", "175.9.36.157:8060", "219.146.153.249:8080", "223.96.95.229:3128", "221.14.140.66:80", "117.156.234.3:8060", "178.217.107.8:53281", "190.90.234.2:3128", "124.235.208.252:443", "61.183.172.164:9090", "222.222.236.207:8060", "124.193.37.5:8888", "60.216.177.152:8118", "175.98.239.87:8888", "60.250.79.187:80", "59.48.247.130:8060", "218.173.74.69:9999", "139.129.99.9:3128", "59.44.16.6:8000", "118.24.61.22:3128", "223.255.191.109:3128", "117.127.0.196:80", "119.28.194.66:8888", "223.93.172.248:3128", "120.131.9.254:1080", "61.152.230.26:8080", "111.206.239.39:38888", "128.199.178.185:3128", "122.72.108.53:80", "42.236.123.17:80", "101.236.22.141:8866", "118.190.95.35:9001", "182.16.171.26:53281", "101.236.19.165:8866", "117.131.235.198:8060", "122.183.139.101:8080"]
+proxies = ["50.233.137.32:80", "59.44.16.6:8080", "119.28.118.116:1080", "101.96.10.5:80", "114.212.12.4:3128", "115.171.203.195:9000", "88.99.149.188:31288", "89.236.17.106:3128", "125.77.25.117:80", "101.248.64.69:8080", "221.228.17.172:8181", "118.190.94.254:9001", "218.50.2.102:8080", "118.24.157.22:3128", "47.94.230.42:9999", "116.62.196.146:3128", "39.106.160.36:3128", "42.115.91.82:52225", "117.127.0.205:8080", "122.114.31.177:808", "180.118.86.164:9000", "113.200.56.13:8010", "114.115.144.137:3128", "118.114.77.47:8080", "42.236.123.17:80", "113.200.214.164:9999", "221.7.255.168:8080", "60.165.54.144:8060", "91.229.222.163:53281", "49.51.193.134:1080", "183.51.191.209:9797", "60.169.6.150:8080", "103.78.213.147:80", "61.136.163.244:8103", "101.236.18.101:8866", "182.61.30.182:3128", "118.24.172.37:1080", "124.238.235.135:8000", "50.233.137.37:80", "39.104.168.160:3128", "101.248.64.69:80", "59.48.237.6:8060", "223.93.172.248:3128", "60.255.186.169:8888", "118.24.61.22:3128", "190.2.144.108:1080", "49.51.193.128:1080", "202.131.233.202:53281", "218.56.132.158:8080", "166.111.80.162:3128", "117.127.0.197:8080", "114.223.170.98:8118", "117.127.0.205:80", "190.2.144.107:1080", "39.137.69.8:8080", "39.105.78.30:3128", "112.115.57.20:3128", "140.143.224.79:3128", "58.87.86.75:3128", "190.242.119.220:3128", "101.37.79.125:3128", "219.147.153.185:8080", "119.41.236.196:8060", "117.190.91.209:8060", "59.44.16.6:80", "47.75.53.32:80", "118.190.95.43:9001", "49.51.195.24:1080", "36.6.184.117:63909", "123.139.56.238:9999", "119.188.162.165:8081", "118.144.149.206:3128", "202.100.83.139:80", "222.179.226.25:8060", "119.10.67.144:808", "183.240.40.87:8080", "91.185.32.46:53281", "112.95.21.0:8888", "221.7.255.168:80", "101.96.10.4:80", "49.51.70.42:1080", "114.215.95.188:3128", "112.25.60.32:8080", "219.137.207.37:53281", "218.56.132.156:8080", "222.33.192.238:8118", "118.190.95.26:9001", "121.17.18.219:8060", "117.127.0.210:80", "218.88.177.149:8908", "125.77.25.120:80", "219.146.153.249:8080", "191.241.76.102:53281", "119.80.41.10:8080", "58.251.230.10:9797", "121.42.167.160:3128", "14.118.252.23:6666", "140.205.222.3:80", "195.234.87.211:53281", "1.119.193.36:8080", "39.137.69.6:8080", "61.135.217.7:80", "115.28.90.79:9001", "120.78.78.141:8888", "47.90.87.225:88", "119.28.99.194:3128", "117.158.174.164:8060", "117.127.0.198:8080", "221.14.140.130:80", "139.224.24.26:8888", "117.127.0.204:80", "118.31.223.194:3128", "117.127.0.197:80", "14.118.254.76:6666", "106.8.17.38:60443", "39.104.53.68:8080", "119.39.68.26:808", "142.44.194.12:8080", "190.90.234.2:3128", "124.235.208.252:443", "49.51.68.122:1080", "222.222.236.207:8060", "125.72.70.46:8060", "221.234.251.156:808", "124.193.37.5:8888", "59.48.247.130:8060", "59.44.16.6:8000", "66.82.144.29:8080", "117.127.0.210:8080", "117.127.0.196:80", "119.28.194.66:8888", "118.24.89.122:1080", "115.84.179.249:7777", "125.109.197.162:27886", "124.238.248.4:80", "111.206.239.39:38888", "111.40.84.73:9797", "112.217.122.29:8080", "218.64.4.220:8060", "202.98.197.245:3128", "114.249.117.249:9000", "180.101.205.253:8888", "118.31.220.3:8080", "118.24.170.46:1080", "117.190.90.20:8060"]
 
 class Bilibili():
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
@@ -341,7 +341,7 @@ class Bilibili():
         else:
             self.log("fid获取失败")
             return False
-        time.sleep(random.uniform(1.0, 2.0))
+        time.sleep(1)
         url = "https://api.bilibili.com/x/v2/fav/video/add"
         data = {'aid': aid,
                 'fid': fid,
@@ -361,7 +361,7 @@ class Bilibili():
             return False
     
     # 评论点赞
-    def likeComment(self, otype, oid, rpid):
+    def commentLike(self, otype, oid, rpid):
         # otype = 作品类型
         # oid = 作品ID
         # rpid = 评论ID
@@ -394,7 +394,7 @@ class Bilibili():
             return False
     
     # 评论抢楼
-    def rushComment(self, otype, oid, floor, message):
+    def commentRush(self, otype, oid, floor, message):
         # otype = 作品类型
         # oid = 作品ID
         # floor = 抢楼楼层
@@ -453,7 +453,7 @@ class Bilibili():
                 time.sleep(1)
     
     # 动态点赞
-    def likeDynamic(self, did):
+    def dynamicLike(self, did):
         # did = 动态ID
         url = "https://api.vc.bilibili.com/dynamic_like/v1/dynamic_like/thumb"
         data = {'uid': self.uid,
@@ -475,7 +475,7 @@ class Bilibili():
             return False
     
     # 动态转发
-    def repostDynamic(self, did, message):
+    def dynamicRepost(self, did, message):
         # did = 动态ID
         # message = 转发内容
         url = "https://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost"
@@ -607,36 +607,41 @@ class Bilibili():
     
     # 小米6X抢F码活动抽奖
     def mi6XLottery(self):
-        url = "https://www.bilibili.com/matsuri/add/lottery/times?act_id=159"
+        url = "https://www.bilibili.com/matsuri/get/act/mylotterytimes?act_id=159"
         headers = {'Cookie': self.cookie,
                    'Host': "www.bilibili.com",
                    'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
                    'User-Agent': Bilibili.ua}
-        while True:
-            response = self.get(url, headers=headers)
-            if response and response.get('code') == 0:
-                self.log("获取额外5次F码抽奖机会成功")
-            else:
-                self.log(f"获取额外5次F码抽奖机会失败 {response}")
-                break
-            time.sleep(0.5)
-        self.log("开始抽奖")
-        url = "https://www.bilibili.com/matsuri/index?act_id=159"
-        headers = {'Cookie': self.cookie,
-                   'Host': "www.bilibili.com",
-                   'Origin': "https://www.bilibili.com",
-                   'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
-                   'User-Agent': Bilibili.ua}
+        response = self.get(url, headers=headers)
         attempts = 0
         while True:
+            url = "https://www.bilibili.com/matsuri/index?act_id=159"
+            headers = {'Cookie': self.cookie,
+                       'Host': "www.bilibili.com",
+                       'Origin': "https://www.bilibili.com",
+                       'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
+                       'User-Agent': Bilibili.ua}
             response = self.post(url, headers=headers)
             if response and response.get('code') is not None:
                 if response['code'] == -30010:
                     attempts += 1
                     self.log(f"第{attempts}次抽奖, 未中奖")
                 elif response['code'] == -30011:
-                    self.log("今日抽奖机会已用完, 停止抽奖")
-                    break
+                    url = "https://www.bilibili.com/matsuri/add/lottery/times?act_id=159"
+                    headers = {'Cookie': self.cookie,
+                               'Host': "www.bilibili.com",
+                               'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
+                               'User-Agent': Bilibili.ua}
+                    response = self.get(url, headers=headers)
+                    if response and response.get('code') is not None:
+                        if response['code'] == 0:
+                            self.log("获取额外5次F码抽奖机会成功")
+                        elif response['code'] == -30030:
+                            self.log("今日抽奖机会已用完, 停止抽奖")
+                            break
+                        else:
+                            self.log(f"获取额外5次F码抽奖机会失败 {response}")
+                    continue
                 elif response['code'] == -30019:
                     self.log(f"当前IP被封禁1小时, {'尝试更换代理' if self.proxy else '停止抽奖'}")
                     if self.proxy:
@@ -647,7 +652,7 @@ class Bilibili():
                 else:
                     attempts += 1
                     self.log(f"第{attempts}次抽奖, 疑似中奖 {response}")
-            time.sleep(random.uniform(4.0, 6.0))
+            time.sleep(1)
 
 def execute(instance):
     instance.log("任务开始执行")
@@ -657,19 +662,18 @@ def execute(instance):
     if tasks['watch'] or tasks['reward'] or tasks['share'] or tasks['favour']:
         random.shuffle(avs)
         for av in avs:
-            if tasks['watch']: instance.watch(av)
-            if tasks['reward']: instance.reward(av, doubleRewards)
-            if tasks['share']: instance.share(av)
-            if tasks['favour']: instance.favour(av)
-            time.sleep(random.uniform(1.0, 2.0))
-    if tasks['likeComment']:
+            if tasks['watch']: instance.watch(av); time.sleep(1)
+            if tasks['reward']: instance.reward(av, doubleRewards); time.sleep(1)
+            if tasks['share']: instance.share(av); time.sleep(1)
+            if tasks['favour']: instance.favour(av); time.sleep(1)
+    if tasks['commentLike']:
         random.shuffle(likeComments)
         for comment in likeComments:
-            instance.likeComment(comment['otype'], comment['oid'], comment['rpid'])
-            time.sleep(random.uniform(1.0, 2.0))
-    if tasks['rushComment']: instance.rushComment(rushComment['otype'], rushComment['oid'], rushComment['floor'], rushComment['message'])
-    if tasks['likeDynamic']: [instance.likeDynamic(did) for did in likeDynamicIDs]
-    if tasks['repostDynamic']: [instance.repostDynamic(dynamic['did'], dynamic['message']) for dynamic in repostDynamics]
+            instance.commentLike(comment['otype'], comment['oid'], comment['rpid'])
+            time.sleep(1)
+    if tasks['commentRush']: instance.commentRush(rushComment['otype'], rushComment['oid'], rushComment['floor'], rushComment['message'])
+    if tasks['dynamicLike']: [instance.dynamicLike(did) for did in likeDynamicIDs]
+    if tasks['dynamicRepost']: [instance.dynamicRepost(dynamic['did'], dynamic['message']) for dynamic in repostDynamics]
     if tasks['mallAssist']: [instance.mallAssist(uid) for uid in beAssistedUIDs]
     if tasks['mallLottery']: instance.mallLottery()
     if tasks['mallPrize']: instance.mallPrize()
