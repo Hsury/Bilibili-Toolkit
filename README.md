@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.7.7-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.7.8-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -19,10 +19,11 @@
 |importCookie        |2018/6/20      |导入Cookie                    |
 |query               |2018/6/20      |获取用户信息                  |
 |silver2Coins        |2018/6/20      |银瓜子兑换硬币                |
-|watch               |2018/6/20      |观看视频                      |
+|watch               |2018/6/20      |观看                          |
+|like                |2018/7/8       |好评                          |
 |reward              |2018/6/20      |投币                          |
-|share               |2018/6/20      |分享视频                      |
-|favour              |2018/6/20      |收藏视频                      |
+|favour              |2018/6/20      |收藏                          |
+|share               |2018/6/20      |分享                          |
 |commentLike         |2018/6/27      |评论点赞                      |
 |commentRush         |2018/6/29      |评论抢楼                      |
 |dynamicLike         |2018/6/29      |动态点赞                      |
@@ -58,7 +59,6 @@ $ python3.6 bilibili.py
 
 |待开发的组件   |
 |---------------|
-|视频点赞       |
 |关注用户       |
 |修改账号资料   |
 |自动更新代理   |

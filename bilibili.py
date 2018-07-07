@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import base64
-import datetime
 import hashlib
 import io
 import json
@@ -18,7 +17,8 @@ from urllib import parse
 
 # 登录方式(优先级由高至低, 留空跳过)
 # 1. 用户名与密码
-account = {'username': "", 'password': ""}
+account = {'username': "",
+           'password': ""}
 # 2. Cookie
 cookie = ""
 # 3. 批量导入用户名与密码(格式: 用户名----密码)
@@ -29,10 +29,11 @@ cookiesFile = ""
 # 任务列表
 tasks = {'query': True, # 获取用户信息
          'silver2Coins': True, # 银瓜子兑换硬币
-         'watch': False, # 观看视频
+         'watch': False, # 观看
+         'like': True, # 好评
          'reward': True, # 投币
-         'share': False, # 分享视频
-         'favour': False, # 收藏视频
+         'favour': False, # 收藏
+         'share': False, # 分享
          'commentLike': False, # 评论点赞
          'commentRush': False, # 评论抢楼
          'dynamicLike': False, # 动态点赞
@@ -51,15 +52,21 @@ doubleRewards = True
 # 评论相关
 # otype为作品类型(视频对应video, 活动对应activity, 相簿对应gallery, 文章对应article), oid为作品ID
 # 点赞评论列表(rpid为评论ID)
-likeComments = [{'otype': "article", 'oid': 617468, 'rpid': 864171896}]
+likeComments = [{'otype': "article",
+                 'oid': 617468,
+                 'rpid': 864171896}]
 # 抢楼评论(floor为抢楼楼层, message为评论内容)
-rushComment = {'otype': "video", 'oid': 25581792, 'floor': 2233, 'message': "哔哩哔哩 (゜-゜)つロ 干杯~"}
+rushComment = {'otype': "video",
+               'oid': 25581792,
+               'floor': 2233,
+               'message': "哔哩哔哩 (゜-゜)つロ 干杯~"}
 
 # 动态相关
 # 点赞动态ID列表
 likeDynamicIDs = [134705258328201427]
 # 转发动态列表(did为动态ID, message为转发内容)
-repostDynamics = [{'did': 134705258328201427, 'message': "哔哩哔哩 (゜-゜)つロ 干杯~"}]
+repostDynamics = [{'did': 134705258328201427,
+                   'message': "哔哩哔哩 (゜-゜)つロ 干杯~"}]
 
 # 会员购周年庆活动助力用户UID列表
 beAssistedUIDs = [124811915, 44587175]
@@ -77,9 +84,7 @@ proxies = ["140.143.96.216:80", "118.24.61.165:8118", "113.207.44.70:3128", "180
 
 class Bilibili():
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
-    
-    timeStamp = lambda: str(int(time.mktime(datetime.datetime.now().timetuple())))
-    
+        
     def __init__(self):
         self.username = ""
         self.password = ""
@@ -152,10 +157,11 @@ class Bilibili():
         self.username, self.password = username, password
         appKey = "1d8b6e7d45233436"
         url = "https://passport.bilibili.com/api/oauth2/getKey"
-        data = {'appkey': appKey, 'sign': self.getSign(f"appkey={appKey}")}
+        data = {'appkey': appKey,
+                'sign': self.getSign(f"appkey={appKey}")}
         response = self.post(url, data=data)
         if response and response.get('code') == 0:
-            keyHash = str(response['data']['hash'])
+            keyHash = response['data']['hash']
             pubKey = rsa.PublicKey.load_pkcs1_openssl_pem(response['data']['key'].encode())
         else:
             self.log(f"Key获取失败 {response}")
@@ -286,7 +292,7 @@ class Bilibili():
         else:
             self.log(f"银瓜子兑换硬币(通道2)失败 {response}")
     
-    # 观看视频
+    # 观看
     def watch(self, aid):
         # aid = 稿件av号
         url = f"https://www.bilibili.com/widget/getPageList?aid={aid}"
@@ -301,12 +307,12 @@ class Bilibili():
                 'cid': cid,
                 'mid': self.uid,
                 'csrf': self.csrf,
-                'played_time': "0",
-                'realtime': "0",
-                'start_ts': Bilibili.timeStamp(),
-                'type': "3",
-                'dt': "2",
-                'play_type': "1"}
+                'played_time': 0,
+                'realtime': 0,
+                'start_ts': int(time.time()),
+                'type': 3,
+                'dt': 2,
+                'play_type': 1}
         headers = {'Cookie': self.cookie,
                    'Host': "api.bilibili.com",
                    'Referer': f"https://www.bilibili.com/video/av{aid}",
@@ -319,13 +325,33 @@ class Bilibili():
             self.log(f"av{aid}观看失败 {response}")
             return False
     
+    # 好评
+    def like(self, aid):
+        # aid = 稿件av号
+        url = "https://api.bilibili.com/x/web-interface/archive/like"
+        data = {'aid': aid,
+                'like': 1,
+                'csrf': self.csrf}
+        headers = {'Cookie': self.cookie,
+                   'Host': "api.bilibili.com",
+                   'Origin': "https://www.bilibili.com",
+                   'Referer': f"https://www.bilibili.com/video/av{aid}",
+                   'User-Agent': Bilibili.ua}
+        response = self.post(url, data=data, headers=headers)
+        if response and response.get('code') == 0:
+            self.log(f"av{aid}好评成功")
+            return True
+        else:
+            self.log(f"av{aid}好评失败 {response}")
+            return False
+    
     # 投币
     def reward(self, aid, double):
         # aid = 稿件av号
         # double = 双倍投币
         url = "https://api.bilibili.com/x/web-interface/coin/add"
-        data = {'aid': str(aid),
-                'multiply': "2" if double else "1",
+        data = {'aid': aid,
+                'multiply': 2 if double else 1,
                 'cross_domain': "true",
                 'csrf': self.csrf}
         headers = {'Cookie': self.cookie,
@@ -335,33 +361,13 @@ class Bilibili():
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
         if response and response.get('code') == 0:
-            self.log(f"av{aid}投{'2' if double else '1'}枚硬币成功")
+            self.log(f"av{aid}投{2 if double else 1}枚硬币成功")
             return True
         else:
-            self.log(f"av{aid}投{'2' if double else '1'}枚硬币失败 {response}")
+            self.log(f"av{aid}投{2 if double else 1}枚硬币失败 {response}")
             return False
     
-    # 分享视频
-    def share(self, aid):
-        # aid = 稿件av号
-        url = "https://api.bilibili.com/x/web-interface/share/add"
-        data = {'aid': str(aid),
-                'jsonp': "jsonp",
-                'csrf': self.csrf}
-        headers = {'Cookie': self.cookie,
-                   'Host': "api.bilibili.com",
-                   'Origin': "https://www.bilibili.com",
-                   'Referer': f"https://www.bilibili.com/video/av{aid}",
-                   'User-Agent': Bilibili.ua}
-        response = self.post(url, data=data, headers=headers)
-        if response and response.get('code') == 0:
-            self.log(f"av{aid}分享成功")
-            return True
-        else:
-            self.log(f"av{aid}分享失败 {response}")
-            return False
-    
-    # 收藏视频
+    # 收藏
     def favour(self, aid):
         # aid = 稿件av号
         url = "https://api.bilibili.com/x/v2/fav/folder"
@@ -393,15 +399,39 @@ class Bilibili():
             self.log(f"av{aid}收藏失败 {response}")
             return False
     
+    # 分享
+    def share(self, aid):
+        # aid = 稿件av号
+        url = "https://api.bilibili.com/x/web-interface/share/add"
+        data = {'aid': aid,
+                'jsonp': "jsonp",
+                'csrf': self.csrf}
+        headers = {'Cookie': self.cookie,
+                   'Host': "api.bilibili.com",
+                   'Origin': "https://www.bilibili.com",
+                   'Referer': f"https://www.bilibili.com/video/av{aid}",
+                   'User-Agent': Bilibili.ua}
+        response = self.post(url, data=data, headers=headers)
+        if response and response.get('code') == 0:
+            self.log(f"av{aid}分享成功")
+            return True
+        else:
+            self.log(f"av{aid}分享失败 {response}")
+            return False
+    
     # 评论点赞
     def commentLike(self, otype, oid, rpid):
         # otype = 作品类型
         # oid = 作品ID
         # rpid = 评论ID
-        patterns = {'video': {'id': 1, 'prefix': "https://www.bilibili.com/video/av"},
-                    'activity': {'id': 4, 'prefix': "https://www.bilibili.com/blackboard/"},
-                    'gallery': {'id': 11, 'prefix': "https://h.bilibili.com/"},
-                    'article': {'id': 12, 'prefix': "https://www.bilibili.com/read/cv"}}
+        patterns = {'video': {'id': 1,
+                              'prefix': "https://www.bilibili.com/video/av"},
+                    'activity': {'id': 4,
+                                 'prefix': "https://www.bilibili.com/blackboard/"},
+                    'gallery': {'id': 11,
+                                'prefix': "https://h.bilibili.com/"},
+                    'article': {'id': 12,
+                                'prefix': "https://www.bilibili.com/read/cv"}}
         if patterns.get(otype) is None:
             self.log("不支持的作品类型")
             return False
@@ -432,16 +462,20 @@ class Bilibili():
         # oid = 作品ID
         # floor = 抢楼楼层
         # message = 评论内容
-        patterns = {'video': {'id': 1, 'prefix': "https://www.bilibili.com/video/av"},
-                    'activity': {'id': 4, 'prefix': "https://www.bilibili.com/blackboard/"},
-                    'gallery': {'id': 11, 'prefix': "https://h.bilibili.com/"},
-                    'article': {'id': 12, 'prefix': "https://www.bilibili.com/read/cv"}}
+        patterns = {'video': {'id': 1,
+                              'prefix': "https://www.bilibili.com/video/av"},
+                    'activity': {'id': 4,
+                                 'prefix': "https://www.bilibili.com/blackboard/"},
+                    'gallery': {'id': 11,
+                                'prefix': "https://h.bilibili.com/"},
+                    'article': {'id': 12,
+                                'prefix': "https://www.bilibili.com/read/cv"}}
         critical = 3
         if patterns.get(otype) is None:
             self.log("不支持的作品类型")
             return False
         while True:
-            url = f"https://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={patterns[otype]['id']}&oid={oid}&sort=0&_={Bilibili.timeStamp()}"
+            url = f"https://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={patterns[otype]['id']}&oid={oid}&sort=0&_={int(time.time())}"
             headers = {'Host': "api.bilibili.com",
                        'Referer': f"{patterns[otype]['prefix']}{oid}",
                        'User-Agent': Bilibili.ua}
@@ -453,7 +487,7 @@ class Bilibili():
                     self.log(f"当前评论楼层数为{currentFloor}, 距离目标楼层还有{deltaFloor}层")
                     time.sleep(min(3, max(0, (deltaFloor - 10) * 0.1)))
                 elif deltaFloor > 0:
-                    self.log("开始抢楼")
+                    self.log(f"当前评论楼层数为{currentFloor}, 开始抢楼")
                     url = "https://api.bilibili.com/x/v2/reply/add"
                     data = {'oid': oid,
                             'type': patterns[otype]['id'],
@@ -550,7 +584,7 @@ class Bilibili():
         url = "https://mall.bilibili.com/mall-c/activity_626/buddy_assist_record/buddy_assist"
         data = {'assistUserPortrait': self.info['face'],
                 'assistUserUname': self.info['nickname'],
-                'beAssistedMid': str(mid),
+                'beAssistedMid': mid,
                 'beAssistedUserPortrait': beAssistedUserPortrait,
                 'beAssistedUserUname': beAssistedUserUname}
         headers = {'Content-Type': "application/json",
@@ -695,13 +729,14 @@ def execute(instance):
     if useProxy: instance.setProxy()
     if tasks['query']: instance.query()
     if tasks['silver2Coins']: instance.silver2Coins()
-    if tasks['watch'] or tasks['reward'] or tasks['share'] or tasks['favour']:
+    if tasks['watch'] or tasks['like'] or tasks['reward'] or tasks['favour'] or tasks['share']:
         random.shuffle(avs)
         for av in avs:
             if tasks['watch']: instance.watch(av); time.sleep(1)
+            if tasks['like']: instance.like(av); time.sleep(1)
             if tasks['reward']: instance.reward(av, doubleRewards); time.sleep(1)
-            if tasks['share']: instance.share(av); time.sleep(1)
             if tasks['favour']: instance.favour(av); time.sleep(1)
+            if tasks['share']: instance.share(av); time.sleep(1)
     if tasks['commentLike']:
         random.shuffle(likeComments)
         for comment in likeComments:
