@@ -5,18 +5,17 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.7.8-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.7.19-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
-> 🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie导入与多用户操作
+> 🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作
 
 ## 功能
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/7/7       |登录                          |
-|importCookie        |2018/6/20      |导入Cookie                    |
+|login               |2018/7/17      |登录                          |
 |query               |2018/6/20      |获取用户信息                  |
 |silver2Coins        |2018/6/20      |银瓜子兑换硬币                |
 |watch               |2018/6/20      |观看                          |
@@ -29,6 +28,7 @@
 |commentRush         |2018/6/29      |评论抢楼                      |
 |dynamicLike         |2018/6/29      |动态点赞                      |
 |dynamicRepost       |2018/6/29      |动态转发                      |
+|mallRush            |2018/7/19      |会员购抢购                    |
 |mallAssist          |2018/6/22      |会员购周年庆活动助力          |
 |mallLottery         |2018/6/23      |会员购周年庆活动抽奖          |
 |mallPrize           |2018/6/23      |会员购周年庆活动中奖查询      |
@@ -36,18 +36,18 @@
 
 ## 使用指南
 
-1. 下载（克隆）本代码仓库，并修改bilibili.py文件中的配置区（详见代码注释）
+1. 下载（克隆）本代码仓库，并修改默认配置文件bilibili.toml
 
 ```
 $ git clone https://github.com/Hsury/Bilibili-Toolkit.git
 $ cd Bilibili-Toolkit
-$ nano bilibili.py
+$ nano bilibili.toml
 ```
 
 2. 使用pip安装所需依赖
 
 ```
-$ python3.6 -m pip install requests rsa
+$ python3.6 -m pip install requests rsa selenium toml
 ```
 
 3. 使用Python 3.6启动脚本
@@ -55,15 +55,6 @@ $ python3.6 -m pip install requests rsa
 ```
 $ python3.6 bilibili.py
 ```
-
-## 计划
-
-|待开发的组件   |
-|---------------|
-|修改账号资料   |
-|代理自动更新   |
-|图形界面       |
-|<未完待续>     |
 
 ## 鸣谢
 
