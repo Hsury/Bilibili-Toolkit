@@ -6,11 +6,13 @@ import hashlib
 import io
 import json
 import os
+import platform
 import random
 import requests
 import rsa
 import shutil
 import string
+import subprocess
 import sys
 import threading
 import time
@@ -90,6 +92,23 @@ class Bilibili():
                 return
             else:
                 self.log(f"代理不可用: {proxy}")
+    
+    def importCredential(self, pairs):
+        for key, value in pairs.items():
+            if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
+                if key == "bili_jct":
+                    self.csrf = value
+                elif key == "DedeUserID":
+                    self.uid = value
+                self.cookie = f"{self.cookie}{key}={value};"
+            elif key == "accessToken":
+                self.accessToken = value
+            elif key == "refreshToken":
+                self.refreshToken = value
+            elif key == "username":
+                self.username = value
+            elif key == "password":
+                self.password = value
     
     # 登录
     def login(self):
@@ -208,24 +227,6 @@ class Bilibili():
             return True
         else:
             return False
-    
-    # 导入凭据
-    def importCredential(self, pairs):
-        for key, value in pairs.items():
-            if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
-                if key == "bili_jct":
-                    self.csrf = value
-                elif key == "DedeUserID":
-                    self.uid = value
-                self.cookie = f"{self.cookie}{key}={value};"
-            elif key == "accessToken":
-                self.accessToken = value
-            elif key == "refreshToken":
-                self.refreshToken = value
-            elif key == "username":
-                self.username = value
-            elif key == "password":
-                self.password = value
     
     # 获取用户信息
     def query(self):
@@ -619,12 +620,12 @@ class Bilibili():
             else:
                 options.add_argument("disable-infobars")
                 options.add_argument("window-size=374,729")
-            if sys.platform == "linux":
+            if platform.system() == "Linux":
                 options.add_argument("no-sandbox")
             options.add_experimental_option("mobileEmulation", {'deviceName': "Nexus 5"})
-            if sys.platform == "win32":
+            if platform.system() == "Windows":
                 options.binary_location = "chrome-win32\\chrome.exe"
-            driver = webdriver.Chrome(executable_path="chromedriver.exe" if sys.platform == "win32" else "chromedriver", chrome_options=options)
+            driver = webdriver.Chrome(executable_path="chromedriver.exe" if platform.system() == "Windows" else "chromedriver", chrome_options=options)
             driver.get(f"https://mall.bilibili.com/detail.html?itemsId={itemID}")
             for cookie in self.cookie.strip(";").split(";"):
                 name, value = cookie.split("=")
@@ -860,7 +861,7 @@ def wrapper(arg):
     addInterval = lambda func, delay: time.sleep(delay)
     config, account = arg['config'], arg['account']
     instance = Bilibili()
-    instance.importCredential(account['pairs'])
+    instance.importCredential(account)
     if instance.login():
         if config['proxy']['enable']:
             instance.addProxy(config['proxy']['pool'])
@@ -916,96 +917,149 @@ def wrapper(arg):
             'password': instance.password}
 
 if __name__ == '__main__':
-    if sys.platform == "win32":
-        freeze_support()
     try:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-    except:
-        pass
-    configFile = sys.argv[1] if len(sys.argv) > 1 else "bilibili.toml"
-    try:
-        config = toml.load(configFile)
-    except:
-        print(f"无法加载{configFile}")
-        sys.stdout.flush()
-        if sys.platform == "win32":
-            os.system("pause")
-        sys.exit()
-    if config['mallRush']['enable']:
-        if sys.platform == "linux" and os.path.exists("/etc/debian_version"):
-            prefix = "sudo " if shutil.which("sudo") else ""
-            if shutil.which("chromium-browser") is None:
-                os.system(f"{prefix}apt -y install chromium-browser")
-            if shutil.which("chromedriver") is None:
-                os.system(f"{prefix}apt -y install chromium-chromedriver")
-                os.system(f"{prefix}ln -s /usr/lib/chromium-browser/chromedriver /usr/bin")
-        elif sys.platform == "linux" and os.path.exists("/etc/redhat-release"):
-            prefix = "sudo " if shutil.which("sudo") else ""
-            if shutil.which("chromium-browser") is None:
-                os.system(f"{prefix}yum -y install chromium")
-            if shutil.which("chromedriver") is None:
-                os.system(f"{prefix}yum -y install chromedriver")
-        elif sys.platform == "win32":
-            if not os.path.exists("chrome-win32\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/571375/chrome-win32.zip"))
-            if not os.path.exists("chromedriver.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.40/chromedriver_win32.zip"))
-        else:
-            print("会员购抢购组件不支持在当前平台上运行")
-            sys.stdout.flush()
-            config['mallRush']['enable'] = False
-    accounts = []
-    for line in config['user']['account'].split("\n"):
+        if platform.system() == "Windows":
+            freeze_support()
         try:
-            if "#" in line:
-                continue
-            pairs = {}
-            for pair in line.strip(";").split(";"):
-                if len(pair.split("=")) == 2:
-                    name, value = pair.split("=")
-                    pairs[name] = value
-            cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
-            token = True if all(key in pairs for key in ["accessToken", "refreshToken"]) else False
-            password = True if all(key in pairs for key in ["username", "password"]) else False
-            if cookie or token or password:
-                accounts.append({'cookie': cookie,
-                                 'token': token,
-                                 'password': password,
-                                 'pairs': pairs})
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
         except:
             pass
-    config['user'].pop("account")
-    print(f"导入了{len(accounts)}个用户")
-    sys.stdout.flush()
-    if len(accounts):
-        with Pool(min(config['user']['process'], len(accounts))) as p:
-            result = p.map(wrapper, [{'config': config,
-                                      'account': account} for account in accounts])
-            p.close()
-            p.join()
-        if config['user']['update']:
-            with open(configFile, "r+", encoding="utf-8") as f:
-                content = f.read()
-                before = content.split("account")[0]
-                after = content.split("account")[-1].split("\"\"\"")[-1]
-                f.seek(0)
-                f.truncate()
-                f.write(before)
-                f.write("account = \"\"\"\n")
-                for credential in result:
-                    newLine = False
-                    for key, value in credential.items():
-                        if value:
-                            if key == "cookie":
-                                f.write(value)
-                            else:
-                                f.write(f"{key}={value};")
-                            newLine = True
-                    if newLine:
-                        f.write("\n")
-                f.write("\"\"\"")
-                f.write(after)
-            print("凭据已更新")
+        configFile = sys.argv[1] if len(sys.argv) > 1 else "bilibili.toml"
+        try:
+            config = toml.load(configFile)
+        except:
+            print(f"无法加载{configFile}")
             sys.stdout.flush()
-    if sys.platform == "win32":
-        os.system("pause")
+            sys.exit()
+        accounts = []
+        for line in config['user']['account'].split("\n"):
+            try:
+                if "#" in line:
+                    continue
+                pairs = {}
+                for pair in line.strip(";").split(";"):
+                    if len(pair.split("=")) == 2:
+                        key, value = pair.split("=")
+                        pairs[key] = value
+                cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
+                token = True if all(key in pairs for key in ["accessToken", "refreshToken"]) else False
+                password = True if all(key in pairs for key in ["username", "password"]) else False
+                if cookie or token or password:
+                    accounts.append(pairs)
+            except:
+                pass
+        config['user'].pop("account")
+        print(f"导入了{len(accounts)}个用户")
+        sys.stdout.flush()
+        if len(accounts):
+            if config['mallRush']['enable']:
+                if platform.system() == "Linux" and os.path.exists("/etc/debian_version"):
+                    prefix = "sudo " if shutil.which("sudo") else ""
+                    if shutil.which("chromium-browser") is None:
+                        os.system(f"{prefix}apt -y install chromium-browser")
+                    if shutil.which("chromedriver") is None:
+                        os.system(f"{prefix}apt -y install chromium-chromedriver")
+                        os.system(f"{prefix}ln -s /usr/lib/chromium-browser/chromedriver /usr/bin")
+                elif platform.system() == "Linux" and os.path.exists("/etc/redhat-release"):
+                    prefix = "sudo " if shutil.which("sudo") else ""
+                    if shutil.which("chromium-browser") is None:
+                        os.system(f"{prefix}yum -y install chromium")
+                    if shutil.which("chromedriver") is None:
+                        os.system(f"{prefix}yum -y install chromedriver")
+                elif platform.system() == "Windows":
+                    if not os.path.exists("chrome-win32\\chrome.exe"):
+                        decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/571375/chrome-win32.zip"))
+                    if not os.path.exists("chromedriver.exe"):
+                        decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.40/chromedriver_win32.zip"))
+                else:
+                    print("会员购抢购组件不支持在当前平台上运行")
+                    sys.stdout.flush()
+                    config['mallRush']['enable'] = False
+            if config['liveTool']['enable']:
+                if platform.system() == "Linux" and platform.machine() == "x86_64":
+                    liveToolCwd = "./bilibili-live-tool-linux-amd64"
+                    liveToolExec = "./bilibiliLiveTool"
+                    if not os.path.exists(liveToolCwd):
+                        decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-amd64.tar.gz"))
+                elif platform.system() == "Linux" and "arm" in platform.machine():
+                    liveToolCwd = "./bilibili-live-tool-linux-arm"
+                    liveToolExec = "./bilibiliLiveTool"
+                    if not os.path.exists(liveToolCwd):
+                        decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-arm.tar.gz"))
+                elif platform.system() == "Windows":
+                    liveToolCwd = "bilibili-live-tool-windows"
+                    liveToolExec = f"{liveToolCwd}\\bilibiliLiveTool.exe"
+                    if not os.path.exists(liveToolCwd):
+                        decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-windows.zip"))
+                else:
+                    print("直播助手组件不支持在当前平台上运行")
+                    sys.stdout.flush()
+                    config['liveTool']['enable'] = False
+                if config['liveTool']['enable']:
+                    liveToolConfig = toml.load(os.path.join(liveToolCwd, "config", "user.toml"))
+                    liveToolConfig['users'].clear()
+                    for account in accounts:
+                        liveToolConfig['users'].append({'username': account['username'] if account.get("username") else "",
+                                                        'password': account['password'] if account.get("password") else "",
+                                                        'access_key': account['accessToken'] if account.get("accessToken") else "",
+                                                        'cookie': ";".join(f"{key}={value}" for key, value in account.items() if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]),
+                                                        'csrf': account['bili_jct'] if account.get("bili_jct") else "",
+                                                        'uid': account['DedeUserID'] if account.get("DedeUserID") else "",
+                                                        'refresh_token': account['refreshToken'] if account.get("refreshToken") else ""})
+                    liveToolConfig['print_control']['danmu'] = config['liveTool']['printDanmaku']
+                    liveToolConfig['task_control']['clean-expiring-gift'] = config['liveTool']['giveExpiringGifts']['enable']
+                    liveToolConfig['task_control']['set-expiring-time'] = config['liveTool']['giveExpiringGifts']['expiringTime']
+                    liveToolConfig['task_control']['clean_expiring_gift2all_medal'] = config['liveTool']['giveExpiringGifts']['toMedal']
+                    liveToolConfig['task_control']['clean-expiring-gift2room'] = config['liveTool']['giveExpiringGifts']['toRoom']
+                    liveToolConfig['task_control']['silver2coin'] = config['liveTool']['dailySilver2Coins']
+                    liveToolConfig['task_control']['send2wearing-medal'] = config['liveTool']['gainIntimacy']['enable']
+                    liveToolConfig['task_control']['send2medal'] = config['liveTool']['gainIntimacy']['otherRoom']
+                    liveToolConfig['task_control']['doublegain_coin2silver'] = config['liveTool']['dailyCoins2Silver']
+                    liveToolConfig['task_control']['givecoin'] = config['liveTool']['dailyGiveCoins']['number']
+                    liveToolConfig['task_control']['fetchrule'] = "uper" if config['liveTool']['dailyGiveCoins']['specialUp'] else "bilitop"
+                    liveToolConfig['task_control']['mid'] = config['liveTool']['dailyGiveCoins']['specialUp']
+                    liveToolConfig['other_control']['default_monitor_roomid'] = config['liveTool']['monitorRoom']
+                    with open(os.path.join(liveToolCwd, "config", "user.toml"), "w") as f:
+                        toml.dump(liveToolConfig, f)
+                    with open(os.path.join(liveToolCwd, "config", "ips.toml"), "w") as f:
+                        toml.dump({'list_ips': config['proxy']['pool']}, f)
+                    liveToolProcess = subprocess.Popen([liveToolExec], cwd=liveToolCwd)
+            with Pool(min(config['user']['process'], len(accounts))) as p:
+                result = p.map(wrapper, [{'config': config,
+                                          'account': account} for account in accounts])
+                p.close()
+                p.join()
+            if config['user']['update']:
+                with open(configFile, "r+", encoding="utf-8") as f:
+                    content = f.read()
+                    before = content.split("account")[0]
+                    after = content.split("account")[-1].split("\"\"\"")[-1]
+                    f.seek(0)
+                    f.truncate()
+                    f.write(before)
+                    f.write("account = \"\"\"\n")
+                    for credential in result:
+                        newLine = False
+                        for key, value in credential.items():
+                            if value:
+                                if key == "cookie":
+                                    f.write(value)
+                                else:
+                                    f.write(f"{key}={value};")
+                                newLine = True
+                        if newLine:
+                            f.write("\n")
+                    f.write("\"\"\"")
+                    f.write(after)
+                print("凭据已更新")
+                sys.stdout.flush()
+        if config['liveTool']['enable']:
+            liveToolProcess.wait()
+    except:
+        try:
+            liveToolProcess.terminate()
+        except:
+            pass
+    finally:
+        if platform.system() == "Windows":
+            os.system("pause")
