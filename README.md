@@ -1,11 +1,11 @@
 <p align="center">
-<img src="http://dl.kagamiz.com/Bilibili.jpeg" alt="Bilibili" width="300px">
+<img src="http://dl.kagamiz.com/Bilibili.png" alt="Bilibili" width="300px">
 </p>
 
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.7.20-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.7.24-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -17,6 +17,7 @@
 |--------------------|---------------|------------------------------|
 |login               |2018/7/17      |登录                          |
 |query               |2018/6/20      |获取用户信息                  |
+|setPrivacy          |2018/7/24      |修改隐私设置                  |
 |silver2Coins        |2018/6/20      |银瓜子兑换硬币                |
 |watch               |2018/6/20      |观看                          |
 |like                |2018/7/8       |好评                          |

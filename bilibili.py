@@ -58,8 +58,7 @@ class Bilibili():
         self.proxyPool = set()
     
     def log(self, message):
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.uid}] {message}")
-        sys.stdout.flush()
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.uid}] {message}", flush=True)
     
     def get(self, url, headers=None, decodeLevel=2, timeout=10):
         try:
@@ -76,7 +75,7 @@ class Bilibili():
             return None
     
     def addProxy(self, proxy):
-        if isinstance(proxy, int):
+        if isinstance(proxy, str):
             self.proxyPool.add(proxy)
         elif isinstance(proxy, list):
             self.proxyPool.update(proxy)
@@ -276,6 +275,54 @@ class Bilibili():
         self.log(f"每日任务: 登录({'✓' if self.info['main']['tasks']['login'] else '✕'}) 观看视频({'✓' if self.info['main']['tasks']['watch'] else '✕'}) 投币({self.info['main']['tasks']['reward'] // 10}/5) 分享视频({'✓' if self.info['main']['tasks']['share'] else '✕'})")
         self.log(f"账号安全: 邮箱({'✓' if self.info['main']['security']['email'] else '✕'}) 手机({'✓' if self.info['main']['security']['phone'] else '✕'}) 密保({'✓' if self.info['main']['security']['safeQuestion'] else '✕'}) 实名认证({'✓' if self.info['main']['security']['realName'] else '✕'})")
     
+    # 修改隐私设置
+    def setPrivacy(self, showFavourite=None, showBangumi=None, showTag=None, showReward=None, showInfo=None, showGame=None):
+        # showFavourite = 展示[我的收藏夹]
+        # showBangumi = 展示[订阅番剧]
+        # showTag = 展示[订阅标签]
+        # showReward = 展示[最近投币的视频]
+        # showInfo = 展示[个人资料]
+        # showGame = 展示[最近玩过的游戏]
+        privacy = {'fav_video': showFavourite,
+                   'bangumi': showBangumi,
+                   'tags': showTag,
+                   'coins_video': showReward,
+                   'user_info': showInfo,
+                   'played_game': showGame}
+        url = f"https://space.bilibili.com/ajax/settings/getSettings?mid={self.uid}"
+        headers = {'Cookie': self.cookie,
+                   'Host': "space.bilibili.com",
+                   'Referer': f"https://space.bilibili.com/{self.uid}/",
+                   'User-Agent': Bilibili.ua}
+        response = self.get(url, headers=headers)
+        if response and response.get("status") == True:
+            for key, value in privacy.items():
+                if not response['data']['privacy'][key] ^ value:
+                    privacy[key] = None
+        else:
+            self.log(f"隐私设置获取失败 {response}")
+            return False
+        url = "https://space.bilibili.com/ajax/settings/setPrivacy"
+        headers = {'Cookie': self.cookie,
+                   'Host': "space.bilibili.com",
+                   'Origin': "https://space.bilibili.com",
+                   'Referer': f"https://space.bilibili.com/{self.uid}/",
+                   'User-Agent': Bilibili.ua}
+        fail = []
+        for key, value in privacy.items():
+            if value is not None:
+                data = {key: 1 if value else 0,
+                        'csrf': self.csrf}
+                response = self.post(url, data=data, headers=headers)
+                if not response or response.get("status") != True:
+                    fail.append(key)
+        if not fail:
+            self.log("隐私设置修改成功")
+            return True
+        else:
+            self.log(f"隐私设置修改失败 {fail}")
+            return False
+    
     # 银瓜子兑换硬币
     def silver2Coins(self):
         url = "https://api.live.bilibili.com/pay/v1/Exchange/silver2coin"
@@ -327,7 +374,7 @@ class Bilibili():
                    'Referer': f"https://www.bilibili.com/video/av{aid}",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
-        if (response and response['code'] == 0) or (response is None):
+        if response and response['code'] == 0 or response is None:
             self.log(f"av{aid}观看成功")
             return True
         else:
@@ -541,7 +588,7 @@ class Bilibili():
                             self.log(f"评论({success}/{deltaFloor})提交成功")
                         else:
                             self.log(f"评论({success}/{deltaFloor})提交失败 {response}")
-                        if (success >= deltaFloor):
+                        if success >= deltaFloor:
                             self.log("停止抢楼")
                             break
                 else:
@@ -828,8 +875,7 @@ class Bilibili():
             time.sleep(1)
 
 def download(url, saveAs=None):
-    print(f"正在下载{url}")
-    sys.stdout.flush()
+    print(f"正在下载{url}", flush=True)
     if saveAs is None:
         saveAs = url.split("/")[-1]
     with open(saveAs, "wb") as f:
@@ -842,10 +888,8 @@ def download(url, saveAs=None):
                 f.write(data)
                 receive += len(data)
                 percent = receive / length
-                print(f"\r[{'=' * int(50 * percent)}{' ' * (50 - int(50 * percent))}] {percent:.0%}", end="")
-                sys.stdout.flush()
-            print()
-            sys.stdout.flush()
+                print(f"\r[{'=' * int(50 * percent)}{' ' * (50 - int(50 * percent))}] {percent:.0%}", end="", flush=True)
+            print(flush=True)
         else:
             f.write(response.content)
     return saveAs
@@ -854,8 +898,7 @@ def decompress(file, remove=True):
     shutil.unpack_archive(file)
     if remove:
         os.remove(file)
-    print(f"{file}解压完毕")
-    sys.stdout.flush()
+    print(f"{file}解压完毕", flush=True)
 
 def wrapper(arg):
     addInterval = lambda func, delay: time.sleep(delay)
@@ -869,6 +912,8 @@ def wrapper(arg):
         threads = []
         if config['query']['enable']:
             threads.append(threading.Thread(target=instance.query))
+        if config['setPrivacy']['enable']:
+            threads.append(threading.Thread(target=instance.setPrivacy, args=(config['setPrivacy']['showFavourite'], config['setPrivacy']['showBangumi'], config['setPrivacy']['showTag'], config['setPrivacy']['showReward'], config['setPrivacy']['showInfo'], config['setPrivacy']['showGame'])))
         if config['silver2Coins']['enable']:
             threads.append(threading.Thread(target=instance.silver2Coins))
         if config['watch']['enable']:
@@ -916,150 +961,150 @@ def wrapper(arg):
             'username': instance.username,
             'password': instance.password}
 
-if __name__ == '__main__':
+def main():
+    configFile = sys.argv[1] if len(sys.argv) > 1 else "bilibili.toml"
     try:
-        if platform.system() == "Windows":
-            freeze_support()
+        config = toml.load(configFile)
+    except:
+        print(f"无法加载{configFile}", flush=True)
+        return
+    accounts = []
+    for line in config['user']['account'].split("\n"):
         try:
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+            if "#" in line:
+                continue
+            pairs = {}
+            for pair in line.strip(";").split(";"):
+                if len(pair.split("=")) == 2:
+                    key, value = pair.split("=")
+                    pairs[key] = value
+            cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
+            token = True if all(key in pairs for key in ["accessToken", "refreshToken"]) else False
+            password = True if all(key in pairs for key in ["username", "password"]) else False
+            if cookie or token or password:
+                accounts.append(pairs)
         except:
             pass
-        configFile = sys.argv[1] if len(sys.argv) > 1 else "bilibili.toml"
-        try:
-            config = toml.load(configFile)
-        except:
-            print(f"无法加载{configFile}")
-            sys.stdout.flush()
-            sys.exit()
-        accounts = []
-        for line in config['user']['account'].split("\n"):
+    config['user'].pop("account")
+    print(f"导入了{len(accounts)}个用户", flush=True)
+    if not accounts:
+        return
+    if config['mallRush']['enable']:
+        if platform.system() == "Linux" and os.path.exists("/etc/debian_version"):
+            prefix = "sudo " if shutil.which("sudo") else ""
+            if shutil.which("chromium-browser") is None:
+                os.system(f"{prefix}apt -y install chromium-browser")
+            if shutil.which("chromedriver") is None:
+                os.system(f"{prefix}apt -y install chromium-chromedriver")
+                os.system(f"{prefix}ln -s /usr/lib/chromium-browser/chromedriver /usr/bin")
+        elif platform.system() == "Linux" and os.path.exists("/etc/redhat-release"):
+            prefix = "sudo " if shutil.which("sudo") else ""
+            if shutil.which("chromium-browser") is None:
+                os.system(f"{prefix}yum -y install chromium")
+            if shutil.which("chromedriver") is None:
+                os.system(f"{prefix}yum -y install chromedriver")
+        elif platform.system() == "Windows":
+            if not os.path.exists("chrome-win32\\chrome.exe"):
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/571375/chrome-win32.zip"))
+            if not os.path.exists("chromedriver.exe"):
+                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.40/chromedriver_win32.zip"))
+        else:
+            print("会员购抢购组件不支持在当前平台上运行", flush=True)
+            config['mallRush']['enable'] = False
+    if config['liveTool']['enable']:
+        if platform.system() == "Linux" and platform.machine() == "x86_64":
+            liveToolCwd = "./bilibili-live-tool-linux-amd64"
+            liveToolExec = "./bilibiliLiveTool"
+            if not os.path.exists(liveToolCwd):
+                decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-amd64.tar.gz"))
+        elif platform.system() == "Linux" and "arm" in platform.machine():
+            liveToolCwd = "./bilibili-live-tool-linux-arm"
+            liveToolExec = "./bilibiliLiveTool"
+            if not os.path.exists(liveToolCwd):
+                decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-arm.tar.gz"))
+        elif platform.system() == "Windows":
+            liveToolCwd = "bilibili-live-tool-windows"
+            liveToolExec = f"{liveToolCwd}\\bilibiliLiveTool.exe"
+            if not os.path.exists(liveToolCwd):
+                decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-windows.zip"))
+        else:
+            print("直播助手组件不支持在当前平台上运行", flush=True)
+            config['liveTool']['enable'] = False
+        if config['liveTool']['enable']:
+            liveToolConfig = toml.load(os.path.join(liveToolCwd, "config", "user.toml"))
+            liveToolConfig['users'].clear()
+            for account in accounts:
+                liveToolConfig['users'].append({'username': account['username'] if account.get("username") else "",
+                                                'password': account['password'] if account.get("password") else "",
+                                                'access_key': account['accessToken'] if account.get("accessToken") else "",
+                                                'cookie': ";".join(f"{key}={value}" for key, value in account.items() if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]),
+                                                'csrf': account['bili_jct'] if account.get("bili_jct") else "",
+                                                'uid': account['DedeUserID'] if account.get("DedeUserID") else "",
+                                                'refresh_token': account['refreshToken'] if account.get("refreshToken") else ""})
+            liveToolConfig['print_control']['danmu'] = config['liveTool']['printDanmaku']
+            liveToolConfig['task_control']['clean-expiring-gift'] = config['liveTool']['giveExpiringGifts']['enable']
+            liveToolConfig['task_control']['set-expiring-time'] = config['liveTool']['giveExpiringGifts']['expiringTime']
+            liveToolConfig['task_control']['clean_expiring_gift2all_medal'] = config['liveTool']['giveExpiringGifts']['toMedal']
+            liveToolConfig['task_control']['clean-expiring-gift2room'] = config['liveTool']['giveExpiringGifts']['toRoom']
+            liveToolConfig['task_control']['silver2coin'] = config['liveTool']['dailySilver2Coins']
+            liveToolConfig['task_control']['send2wearing-medal'] = config['liveTool']['gainIntimacy']['enable']
+            liveToolConfig['task_control']['send2medal'] = config['liveTool']['gainIntimacy']['otherRoom']
+            liveToolConfig['task_control']['doublegain_coin2silver'] = config['liveTool']['dailyCoins2Silver']
+            liveToolConfig['task_control']['givecoin'] = config['liveTool']['dailyGiveCoins']['number']
+            liveToolConfig['task_control']['fetchrule'] = "uper" if config['liveTool']['dailyGiveCoins']['specialUp'] else "bilitop"
+            liveToolConfig['task_control']['mid'] = config['liveTool']['dailyGiveCoins']['specialUp']
+            liveToolConfig['other_control']['default_monitor_roomid'] = config['liveTool']['monitorRoom']
+            with open(os.path.join(liveToolCwd, "config", "user.toml"), "w") as f:
+                toml.dump(liveToolConfig, f)
+            with open(os.path.join(liveToolCwd, "config", "ips.toml"), "w") as f:
+                toml.dump({'list_ips': config['proxy']['pool']}, f)
             try:
-                if "#" in line:
-                    continue
-                pairs = {}
-                for pair in line.strip(";").split(";"):
-                    if len(pair.split("=")) == 2:
-                        key, value = pair.split("=")
-                        pairs[key] = value
-                cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
-                token = True if all(key in pairs for key in ["accessToken", "refreshToken"]) else False
-                password = True if all(key in pairs for key in ["username", "password"]) else False
-                if cookie or token or password:
-                    accounts.append(pairs)
+                liveToolProcess = subprocess.Popen([liveToolExec], cwd=liveToolCwd)
             except:
-                pass
-        config['user'].pop("account")
-        print(f"导入了{len(accounts)}个用户")
-        sys.stdout.flush()
-        if len(accounts):
-            if config['mallRush']['enable']:
-                if platform.system() == "Linux" and os.path.exists("/etc/debian_version"):
-                    prefix = "sudo " if shutil.which("sudo") else ""
-                    if shutil.which("chromium-browser") is None:
-                        os.system(f"{prefix}apt -y install chromium-browser")
-                    if shutil.which("chromedriver") is None:
-                        os.system(f"{prefix}apt -y install chromium-chromedriver")
-                        os.system(f"{prefix}ln -s /usr/lib/chromium-browser/chromedriver /usr/bin")
-                elif platform.system() == "Linux" and os.path.exists("/etc/redhat-release"):
-                    prefix = "sudo " if shutil.which("sudo") else ""
-                    if shutil.which("chromium-browser") is None:
-                        os.system(f"{prefix}yum -y install chromium")
-                    if shutil.which("chromedriver") is None:
-                        os.system(f"{prefix}yum -y install chromedriver")
-                elif platform.system() == "Windows":
-                    if not os.path.exists("chrome-win32\\chrome.exe"):
-                        decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/571375/chrome-win32.zip"))
-                    if not os.path.exists("chromedriver.exe"):
-                        decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.40/chromedriver_win32.zip"))
-                else:
-                    print("会员购抢购组件不支持在当前平台上运行")
-                    sys.stdout.flush()
-                    config['mallRush']['enable'] = False
-            if config['liveTool']['enable']:
-                if platform.system() == "Linux" and platform.machine() == "x86_64":
-                    liveToolCwd = "./bilibili-live-tool-linux-amd64"
-                    liveToolExec = "./bilibiliLiveTool"
-                    if not os.path.exists(liveToolCwd):
-                        decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-amd64.tar.gz"))
-                elif platform.system() == "Linux" and "arm" in platform.machine():
-                    liveToolCwd = "./bilibili-live-tool-linux-arm"
-                    liveToolExec = "./bilibiliLiveTool"
-                    if not os.path.exists(liveToolCwd):
-                        decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-arm.tar.gz"))
-                elif platform.system() == "Windows":
-                    liveToolCwd = "bilibili-live-tool-windows"
-                    liveToolExec = f"{liveToolCwd}\\bilibiliLiveTool.exe"
-                    if not os.path.exists(liveToolCwd):
-                        decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-windows.zip"))
-                else:
-                    print("直播助手组件不支持在当前平台上运行")
-                    sys.stdout.flush()
-                    config['liveTool']['enable'] = False
-                if config['liveTool']['enable']:
-                    liveToolConfig = toml.load(os.path.join(liveToolCwd, "config", "user.toml"))
-                    liveToolConfig['users'].clear()
-                    for account in accounts:
-                        liveToolConfig['users'].append({'username': account['username'] if account.get("username") else "",
-                                                        'password': account['password'] if account.get("password") else "",
-                                                        'access_key': account['accessToken'] if account.get("accessToken") else "",
-                                                        'cookie': ";".join(f"{key}={value}" for key, value in account.items() if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]),
-                                                        'csrf': account['bili_jct'] if account.get("bili_jct") else "",
-                                                        'uid': account['DedeUserID'] if account.get("DedeUserID") else "",
-                                                        'refresh_token': account['refreshToken'] if account.get("refreshToken") else ""})
-                    liveToolConfig['print_control']['danmu'] = config['liveTool']['printDanmaku']
-                    liveToolConfig['task_control']['clean-expiring-gift'] = config['liveTool']['giveExpiringGifts']['enable']
-                    liveToolConfig['task_control']['set-expiring-time'] = config['liveTool']['giveExpiringGifts']['expiringTime']
-                    liveToolConfig['task_control']['clean_expiring_gift2all_medal'] = config['liveTool']['giveExpiringGifts']['toMedal']
-                    liveToolConfig['task_control']['clean-expiring-gift2room'] = config['liveTool']['giveExpiringGifts']['toRoom']
-                    liveToolConfig['task_control']['silver2coin'] = config['liveTool']['dailySilver2Coins']
-                    liveToolConfig['task_control']['send2wearing-medal'] = config['liveTool']['gainIntimacy']['enable']
-                    liveToolConfig['task_control']['send2medal'] = config['liveTool']['gainIntimacy']['otherRoom']
-                    liveToolConfig['task_control']['doublegain_coin2silver'] = config['liveTool']['dailyCoins2Silver']
-                    liveToolConfig['task_control']['givecoin'] = config['liveTool']['dailyGiveCoins']['number']
-                    liveToolConfig['task_control']['fetchrule'] = "uper" if config['liveTool']['dailyGiveCoins']['specialUp'] else "bilitop"
-                    liveToolConfig['task_control']['mid'] = config['liveTool']['dailyGiveCoins']['specialUp']
-                    liveToolConfig['other_control']['default_monitor_roomid'] = config['liveTool']['monitorRoom']
-                    with open(os.path.join(liveToolCwd, "config", "user.toml"), "w") as f:
-                        toml.dump(liveToolConfig, f)
-                    with open(os.path.join(liveToolCwd, "config", "ips.toml"), "w") as f:
-                        toml.dump({'list_ips': config['proxy']['pool']}, f)
-                    liveToolProcess = subprocess.Popen([liveToolExec], cwd=liveToolCwd)
-            with Pool(min(config['user']['process'], len(accounts))) as p:
-                result = p.map(wrapper, [{'config': config,
-                                          'account': account} for account in accounts])
-                p.close()
-                p.join()
-            if config['user']['update']:
-                with open(configFile, "r+", encoding="utf-8") as f:
-                    content = f.read()
-                    before = content.split("account")[0]
-                    after = content.split("account")[-1].split("\"\"\"")[-1]
-                    f.seek(0)
-                    f.truncate()
-                    f.write(before)
-                    f.write("account = \"\"\"\n")
-                    for credential in result:
-                        newLine = False
-                        for key, value in credential.items():
-                            if value:
-                                if key == "cookie":
-                                    f.write(value)
-                                else:
-                                    f.write(f"{key}={value};")
-                                newLine = True
-                        if newLine:
-                            f.write("\n")
-                    f.write("\"\"\"")
-                    f.write(after)
-                print("凭据已更新")
-                sys.stdout.flush()
+                print("直播助手组件启动失败", flush=True)
+                config['liveTool']['enable'] = False
+    try:
+        with Pool(min(config['user']['process'], len(accounts))) as p:
+            result = p.map(wrapper, [{'config': config,
+                                      'account': account} for account in accounts])
+            p.close()
+            p.join()
+        if config['user']['update']:
+            with open(configFile, "r+", encoding="utf-8") as f:
+                content = f.read()
+                before = content.split("account")[0]
+                after = content.split("account")[-1].split("\"\"\"")[-1]
+                f.seek(0)
+                f.truncate()
+                f.write(before)
+                f.write("account = \"\"\"\n")
+                for credential in result:
+                    newLine = False
+                    for key, value in credential.items():
+                        if value:
+                            if key == "cookie":
+                                f.write(value)
+                            else:
+                                f.write(f"{key}={value};")
+                            newLine = True
+                    if newLine:
+                        f.write("\n")
+                f.write("\"\"\"")
+                f.write(after)
+            print("凭据已更新", flush=True)
         if config['liveTool']['enable']:
             liveToolProcess.wait()
     except:
-        try:
+        if config['liveTool']['enable']:
             liveToolProcess.terminate()
-        except:
-            pass
-    finally:
-        if platform.system() == "Windows":
-            os.system("pause")
+
+if __name__ == '__main__':
+    if platform.system() == "Windows":
+        freeze_support()
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    except:
+        pass
+    main()
+    if platform.system() == "Windows":
+        os.system("pause")
