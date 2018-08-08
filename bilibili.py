@@ -22,7 +22,8 @@ from selenium import webdriver
 from urllib import parse
 
 class Bilibili():
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+    appKey = "1d8b6e7d45233436"
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
     
     def __init__(self):
         self.cookie = ""
@@ -60,19 +61,25 @@ class Bilibili():
     def log(self, message):
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.uid}] {message}", flush=True)
     
-    def get(self, url, headers=None, decodeLevel=2, timeout=10):
-        try:
-            response = requests.get(url, headers=headers, timeout=timeout, proxies=self.proxy)
-            return response.json() if decodeLevel == 2 else response.content if decodeLevel == 1 else response
-        except:
-            return None
+    def get(self, url, headers=None, decodeLevel=2, timeout=10, retry=5):
+        for i in range(retry + 1):
+            try:
+                response = requests.get(url, headers=headers, timeout=timeout, proxies=self.proxy)
+                return response.json() if decodeLevel == 2 else response.content if decodeLevel == 1 else response
+            except:
+                if self.proxy:
+                    self.setProxy()
+        return None
     
-    def post(self, url, data=None, headers=None, decodeLevel=2, timeout=10):
-        try:
-            response = requests.post(url, data=data, headers=headers, timeout=timeout, proxies=self.proxy)
-            return response.json() if decodeLevel == 2 else response.content if decodeLevel == 1 else response
-        except:
-            return None
+    def post(self, url, data=None, headers=None, decodeLevel=2, timeout=10, retry=5):
+        for i in range(retry + 1):
+            try:
+                response = requests.post(url, data=data, headers=headers, timeout=timeout, proxies=self.proxy)
+                return response.json() if decodeLevel == 2 else response.content if decodeLevel == 1 else response
+            except:
+                if self.proxy:
+                    self.setProxy()
+        return None
     
     def addProxy(self, proxy):
         if isinstance(proxy, str):
@@ -81,16 +88,15 @@ class Bilibili():
             self.proxyPool.update(proxy)
     
     def setProxy(self):
-        url = "https://api.live.bilibili.com/gift/v2/gift/bag_list"
-        while True:
-            proxy = random.sample(self.proxyPool, 1)[0]
-            self.proxy = {'https': f"https://{proxy}"}
-            response = self.get(url, timeout=3)
-            if response and response.get("code") is not None:
-                self.log(f"使用代理: {proxy}")
-                return
-            else:
-                self.log(f"代理不可用: {proxy}")
+        proxy = random.sample(self.proxyPool, 1)[0]
+        self.proxy = {'https': f"https://{proxy}"}
+        self.log(f"使用代理: {proxy}")
+    
+    def getSign(self, param):
+        salt = "560c52ccd288fed045859ed18bffd973"
+        signHash = hashlib.md5()
+        signHash.update(f"{param}{salt}".encode())
+        return signHash.hexdigest()
     
     def importCredential(self, pairs):
         for key, value in pairs.items():
@@ -111,14 +117,6 @@ class Bilibili():
     
     # 登录
     def login(self):
-        appKey = "1d8b6e7d45233436"
-        
-        def getSign(param):
-            salt = "560c52ccd288fed045859ed18bffd973"
-            signHash = hashlib.md5()
-            signHash.update(f"{param}{salt}".encode())
-            return signHash.hexdigest()
-        
         def useCookie():
             url = "https://api.bilibili.com/x/space/myinfo"
             headers = {'Cookie': self.cookie,
@@ -134,15 +132,15 @@ class Bilibili():
                 return False
         
         def useToken():
-            param = f"access_key={self.accessToken}&appkey={appKey}&ts={int(time.time())}"
-            url = f"https://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={getSign(param)}"
+            param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
+            url = f"https://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.getSign(param)}"
             response = self.get(url)
             if response and response.get("code") == 0:
                 self.uid = response['data']['mid']
                 self.log(f"Token仍有效, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['expires_in'])))}")
                 if not self.cookie:
-                    param = f"access_key={self.accessToken}&appkey={appKey}&gourl=https%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
-                    url = f"https://passport.bilibili.com/api/login/sso?{param}&sign={getSign(param)}"
+                    param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&gourl=https%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
+                    url = f"https://passport.bilibili.com/api/login/sso?{param}&sign={self.getSign(param)}"
                     session = requests.session()
                     session.get(url)
                     self.importCredential(session.cookies.get_dict())
@@ -150,8 +148,8 @@ class Bilibili():
             else:
                 self.log(f"Token已失效")
                 url = "https://passport.bilibili.com/api/v2/oauth2/refresh_token"
-                param = f"access_key={self.accessToken}&appkey={appKey}&refresh_token={self.refreshToken}&ts={int(time.time())}"
-                data = f"{param}&sign={getSign(param)}"
+                param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&refresh_token={self.refreshToken}&ts={int(time.time())}"
+                data = f"{param}&sign={self.getSign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
                 response = self.post(url, data=data, headers=headers)
                 if response and response.get("code") == 0:
@@ -170,8 +168,8 @@ class Bilibili():
         
         def usePassword():
             url = "https://passport.bilibili.com/api/oauth2/getKey"
-            data = {'appkey': appKey,
-                    'sign': getSign(f"appkey={appKey}")}
+            data = {'appkey': Bilibili.appKey,
+                    'sign': self.getSign(f"appkey={Bilibili.appKey}")}
             response = self.post(url, data=data)
             if response and response.get("code") == 0:
                 keyHash = response['data']['hash']
@@ -179,44 +177,52 @@ class Bilibili():
             else:
                 self.log(f"Key获取失败 {response}")
                 return False
-            url = "https://passport.bilibili.com/api/v2/oauth2/login"
-            param = f"appkey={appKey}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
-            data = f"{param}&sign={getSign(param)}"
-            headers = {'Content-type': "application/x-www-form-urlencoded"}
-            response = self.post(url, data=data, headers=headers)
-            while response and response.get("code") == -105:
-                self.cookie = f"sid={''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
-                url = "https://passport.bilibili.com/captcha"
-                headers = {'Cookie': self.cookie,
-                           'Host': "passport.bilibili.com",
-                           'User-Agent': Bilibili.ua}
-                response = self.get(url, headers=headers, decodeLevel=1)
-                if response is None:
-                    continue
-                url = "http://101.236.6.31:8080/code"
-                data = {'image': base64.b64encode(response)}
-                response = self.post(url, data=data, decodeLevel=1)
-                if response is None:
-                    continue
-                captcha = response.decode()
-                self.log(f"验证码识别结果为: {captcha}")
+            freeze = False
+            while True:
                 url = "https://passport.bilibili.com/api/v2/oauth2/login"
-                param = f"appkey={appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
-                data = f"{param}&sign={getSign(param)}"
-                headers = {'Content-type': "application/x-www-form-urlencoded",
-                           'Cookie': self.cookie}
+                param = f"appkey={Bilibili.appKey}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
+                data = f"{param}&sign={self.getSign(param)}"
+                headers = {'Content-type': "application/x-www-form-urlencoded"}
                 response = self.post(url, data=data, headers=headers)
-            if response and response.get("code") == 0:
-                self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
-                self.csrf = response['data']['cookie_info']['cookies'][0]['value']
-                self.uid = response['data']['cookie_info']['cookies'][1]['value']
-                self.accessToken = response['data']['token_info']['access_token']
-                self.refreshToken = response['data']['token_info']['refresh_token']
-                self.log(f"{self.username}登录成功")
-                return True
-            else:
-                self.log(f"{self.username}登录失败 {response}")
-                return False
+                if response:
+                    while response.get("code") == -105:
+                        self.cookie = f"sid={''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
+                        url = "https://passport.bilibili.com/captcha"
+                        headers = {'Cookie': self.cookie,
+                                   'Host': "passport.bilibili.com",
+                                   'User-Agent': Bilibili.ua}
+                        response = self.get(url, headers=headers, decodeLevel=1)
+                        if response is None:
+                            continue
+                        url = "http://101.236.6.31:8080/code"
+                        data = {'image': base64.b64encode(response)}
+                        response = self.post(url, data=data, decodeLevel=1)
+                        if response is None:
+                            continue
+                        captcha = response.decode()
+                        self.log(f"验证码识别结果为: {captcha}")
+                        url = "https://passport.bilibili.com/api/v2/oauth2/login"
+                        param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
+                        data = f"{param}&sign={self.getSign(param)}"
+                        headers = {'Content-type': "application/x-www-form-urlencoded",
+                                   'Cookie': self.cookie}
+                        response = self.post(url, data=data, headers=headers)
+                    if response.get("code") == 0:
+                        self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
+                        self.csrf = response['data']['cookie_info']['cookies'][0]['value']
+                        self.uid = response['data']['cookie_info']['cookies'][1]['value']
+                        self.accessToken = response['data']['token_info']['access_token']
+                        self.refreshToken = response['data']['token_info']['refresh_token']
+                        self.log(f"{self.username}登录成功")
+                        return True
+                    else:
+                        self.log(f"{self.username}登录失败 {response}")
+                        return False
+                else:
+                    if not freeze:
+                        self.log("当前IP登录过于频繁, 进入冷却模式")
+                        freeze = True
+                    time.sleep(5)
         
         if self.cookie and useCookie():
             return True
@@ -335,18 +341,17 @@ class Bilibili():
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
         if response and response.get("code") == 0:
-            self.log("银瓜子兑换硬币(通道1)成功")
+            self.log("银瓜子兑换硬币(PC通道)成功")
         else:
-            self.log(f"银瓜子兑换硬币(通道1)失败 {response}")
-        url = "https://api.live.bilibili.com/exchange/silver2coin"
-        headers = {'Cookie': self.cookie,
-                   'Host': "api.live.bilibili.com",
-                   'User-Agent': Bilibili.ua}
+            self.log(f"银瓜子兑换硬币(PC通道)失败 {response}")
+        param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
+        url = f"https://api.live.bilibili.com/AppExchange/silver2coin?{param}&sign={self.getSign(param)}"
+        headers = {'Cookie': self.cookie}
         response = self.get(url, headers=headers)
         if response and response.get("code") == 0:
-            self.log("银瓜子兑换硬币(通道2)成功")
+            self.log("银瓜子兑换硬币(APP通道)成功")
         else:
-            self.log(f"银瓜子兑换硬币(通道2)失败 {response}")
+            self.log(f"银瓜子兑换硬币(APP通道)失败 {response}")
     
     # 观看
     def watch(self, aid):
@@ -971,7 +976,7 @@ def main():
     accounts = []
     for line in config['user']['account'].split("\n"):
         try:
-            if "#" in line:
+            if line[0] == "#":
                 continue
             pairs = {}
             for pair in line.strip(";").split(";"):
@@ -1005,34 +1010,55 @@ def main():
                 os.system(f"{prefix}yum -y install chromedriver")
         elif platform.system() == "Windows":
             if not os.path.exists("chrome-win32\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/571375/chrome-win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/579032/chrome-win32.zip"))
             if not os.path.exists("chromedriver.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.40/chromedriver_win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.41/chromedriver_win32.zip"))
         else:
             print("会员购抢购组件不支持在当前平台上运行", flush=True)
             config['mallRush']['enable'] = False
+    liveToolProcess = None
     if config['liveTool']['enable']:
         if platform.system() == "Linux" and platform.machine() == "x86_64":
+            liveToolSupport = True
+            liveToolDownloadFilename = "bilibili-live-tool-linux-amd64.tar.gz"
             liveToolCwd = "./bilibili-live-tool-linux-amd64"
             liveToolExec = "./bilibiliLiveTool"
-            if not os.path.exists(liveToolCwd):
-                decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-amd64.tar.gz"))
         elif platform.system() == "Linux" and "arm" in platform.machine():
+            liveToolSupport = True
+            liveToolDownloadFilename = "bilibili-live-tool-linux-arm.tar.gz"
             liveToolCwd = "./bilibili-live-tool-linux-arm"
             liveToolExec = "./bilibiliLiveTool"
-            if not os.path.exists(liveToolCwd):
-                decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-linux-arm.tar.gz"))
         elif platform.system() == "Windows":
+            liveToolSupport = True
+            liveToolDownloadFilename = "bilibili-live-tool-windows.zip"
             liveToolCwd = "bilibili-live-tool-windows"
             liveToolExec = f"{liveToolCwd}\\bilibiliLiveTool.exe"
-            if not os.path.exists(liveToolCwd):
-                decompress(download("https://github.com/Hsury/Bilibili-Live-Tool/releases/download/20180714/bilibili-live-tool-20180714-windows.zip"))
         else:
+            liveToolSupport = False
             print("直播助手组件不支持在当前平台上运行", flush=True)
-            config['liveTool']['enable'] = False
-        if config['liveTool']['enable']:
-            liveToolConfig = toml.load(os.path.join(liveToolCwd, "config", "user.toml"))
-            liveToolConfig['users'].clear()
+        if liveToolSupport:
+            try:
+                with open(os.path.join(liveToolCwd, "version"), "r") as f:
+                    LiveToolCurrentVersion = f.read()
+            except:
+                LiveToolCurrentVersion = None
+            LiveToolCurrentVersion = "1d65299"
+            if config['liveTool']['autoUpdate']:
+                try:
+                    liveToolLatestVersion = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()["tag_name"]
+                    if LiveToolCurrentVersion and LiveToolCurrentVersion != liveToolLatestVersion:
+                        print("发现新版本直播助手组件", flush=True)
+                except:
+                    if LiveToolCurrentVersion:
+                        liveToolLatestVersion = LiveToolCurrentVersion
+            if LiveToolCurrentVersion != liveToolLatestVersion:
+                decompress(download(f"https://github.com/Hsury/Bilibili-Live-Tool/releases/download/{liveToolLatestVersion}/{liveToolDownloadFilename}"))
+            liveToolConfig = {}
+            liveToolConfig['users'] = []
+            liveToolConfig['platform'] = {}
+            liveToolConfig['print_control'] = {}
+            liveToolConfig['task_control'] = {}
+            liveToolConfig['other_control'] = {}
             for account in accounts:
                 liveToolConfig['users'].append({'username': account['username'] if account.get("username") else "",
                                                 'password': account['password'] if account.get("password") else "",
@@ -1041,6 +1067,7 @@ def main():
                                                 'csrf': account['bili_jct'] if account.get("bili_jct") else "",
                                                 'uid': account['DedeUserID'] if account.get("DedeUserID") else "",
                                                 'refresh_token': account['refreshToken'] if account.get("refreshToken") else ""})
+            liveToolConfig['platform']['platform'] = "ios_pythonista"
             liveToolConfig['print_control']['danmu'] = config['liveTool']['printDanmaku']
             liveToolConfig['task_control']['clean-expiring-gift'] = config['liveTool']['giveExpiringGifts']['enable']
             liveToolConfig['task_control']['set-expiring-time'] = config['liveTool']['giveExpiringGifts']['expiringTime']
@@ -1062,7 +1089,6 @@ def main():
                 liveToolProcess = subprocess.Popen([liveToolExec], cwd=liveToolCwd)
             except:
                 print("直播助手组件启动失败", flush=True)
-                config['liveTool']['enable'] = False
     try:
         with Pool(min(config['user']['process'], len(accounts))) as p:
             result = p.map(wrapper, [{'config': config,
@@ -1092,10 +1118,10 @@ def main():
                 f.write("\"\"\"")
                 f.write(after)
             print("凭据已更新", flush=True)
-        if config['liveTool']['enable']:
+        if liveToolProcess:
             liveToolProcess.wait()
     except:
-        if config['liveTool']['enable']:
+        if liveToolProcess:
             liveToolProcess.terminate()
 
 if __name__ == '__main__':
