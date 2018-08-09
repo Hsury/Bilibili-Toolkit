@@ -330,28 +330,32 @@ class Bilibili():
             return False
     
     # 银瓜子兑换硬币
-    def silver2Coins(self):
-        url = "https://api.live.bilibili.com/pay/v1/Exchange/silver2coin"
-        data = {'platform': "pc",
-                'csrf_token': self.csrf}
-        headers = {'Cookie': self.cookie,
-                   'Host': "api.live.bilibili.com",
-                   'Origin': "https://live.bilibili.com",
-                   'Referer': "https://live.bilibili.com/exchange",
-                   'User-Agent': Bilibili.ua}
-        response = self.post(url, data=data, headers=headers)
-        if response and response.get("code") == 0:
-            self.log("银瓜子兑换硬币(PC通道)成功")
-        else:
-            self.log(f"银瓜子兑换硬币(PC通道)失败 {response}")
-        param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
-        url = f"https://api.live.bilibili.com/AppExchange/silver2coin?{param}&sign={self.getSign(param)}"
-        headers = {'Cookie': self.cookie}
-        response = self.get(url, headers=headers)
-        if response and response.get("code") == 0:
-            self.log("银瓜子兑换硬币(APP通道)成功")
-        else:
-            self.log(f"银瓜子兑换硬币(APP通道)失败 {response}")
+    def silver2Coins(self, app=True, pc=True):
+        # app = APP通道
+        # pc = PC通道
+        if app:
+            param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
+            url = f"https://api.live.bilibili.com/AppExchange/silver2coin?{param}&sign={self.getSign(param)}"
+            headers = {'Cookie': self.cookie}
+            response = self.get(url, headers=headers)
+            if response and response.get("code") == 0:
+                self.log("银瓜子兑换硬币(APP通道)成功")
+            else:
+                self.log(f"银瓜子兑换硬币(APP通道)失败 {response}")
+        if pc:
+            url = "https://api.live.bilibili.com/pay/v1/Exchange/silver2coin"
+            data = {'platform': "pc",
+                    'csrf_token': self.csrf}
+            headers = {'Cookie': self.cookie,
+                       'Host': "api.live.bilibili.com",
+                       'Origin': "https://live.bilibili.com",
+                       'Referer': "https://live.bilibili.com/exchange",
+                       'User-Agent': Bilibili.ua}
+            response = self.post(url, data=data, headers=headers)
+            if response and response.get("code") == 0:
+                self.log("银瓜子兑换硬币(PC通道)成功")
+            else:
+                self.log(f"银瓜子兑换硬币(PC通道)失败 {response}")
     
     # 观看
     def watch(self, aid):
@@ -1020,17 +1024,17 @@ def main():
     if config['liveTool']['enable']:
         if platform.system() == "Linux" and platform.machine() == "x86_64":
             liveToolSupport = True
-            liveToolDownloadFilename = "bilibili-live-tool-linux-amd64.tar.gz"
+            liveToolPkg = "bilibili-live-tool-linux-amd64.tar.gz"
             liveToolCwd = "./bilibili-live-tool-linux-amd64"
             liveToolExec = "./bilibiliLiveTool"
         elif platform.system() == "Linux" and "arm" in platform.machine():
             liveToolSupport = True
-            liveToolDownloadFilename = "bilibili-live-tool-linux-arm.tar.gz"
+            liveToolPkg = "bilibili-live-tool-linux-arm.tar.gz"
             liveToolCwd = "./bilibili-live-tool-linux-arm"
             liveToolExec = "./bilibiliLiveTool"
         elif platform.system() == "Windows":
             liveToolSupport = True
-            liveToolDownloadFilename = "bilibili-live-tool-windows.zip"
+            liveToolPkg = "bilibili-live-tool-windows.zip"
             liveToolCwd = "bilibili-live-tool-windows"
             liveToolExec = f"{liveToolCwd}\\bilibiliLiveTool.exe"
         else:
@@ -1038,21 +1042,20 @@ def main():
             print("直播助手组件不支持在当前平台上运行", flush=True)
         if liveToolSupport:
             try:
-                with open(os.path.join(liveToolCwd, "version"), "r") as f:
-                    LiveToolCurrentVersion = f.read()
+                with open(os.path.join(liveToolCwd, "commit"), "r") as f:
+                    LiveToolCurrentCommit = f.read()
             except:
-                LiveToolCurrentVersion = None
-            LiveToolCurrentVersion = "1d65299"
+                LiveToolCurrentCommit = None
+            liveToolLatestCommit = LiveToolCurrentCommit if LiveToolCurrentCommit else "e4d6c87"
             if config['liveTool']['autoUpdate']:
                 try:
-                    liveToolLatestVersion = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()["tag_name"]
-                    if LiveToolCurrentVersion and LiveToolCurrentVersion != liveToolLatestVersion:
+                    liveToolLatestCommit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()["tag_name"]
+                    if LiveToolCurrentCommit and LiveToolCurrentCommit != liveToolLatestCommit:
                         print("发现新版本直播助手组件", flush=True)
                 except:
-                    if LiveToolCurrentVersion:
-                        liveToolLatestVersion = LiveToolCurrentVersion
-            if LiveToolCurrentVersion != liveToolLatestVersion:
-                decompress(download(f"https://github.com/Hsury/Bilibili-Live-Tool/releases/download/{liveToolLatestVersion}/{liveToolDownloadFilename}"))
+                    pass
+            if LiveToolCurrentCommit != liveToolLatestCommit:
+                decompress(download(f"https://github.com/Hsury/Bilibili-Live-Tool/releases/download/{liveToolLatestCommit}/{liveToolPkg}"))
             liveToolConfig = {}
             liveToolConfig['users'] = []
             liveToolConfig['platform'] = {}

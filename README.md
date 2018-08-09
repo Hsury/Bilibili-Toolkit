@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.8.8-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.8.9-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -34,7 +34,7 @@
 |mallLottery         |2018/6/23      |会员购周年庆活动抽奖          |
 |mallPrize           |2018/6/23      |会员购周年庆活动中奖查询      |
 |mi6XLottery         |2018/6/30      |小米6X抢F码活动抽奖           |
-|liveTool            |2018/8/8       |直播助手                      |
+|liveTool            |2018/8/9       |直播助手                      |
 
 *注：liveTool组件编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
 
@@ -42,7 +42,7 @@
 
 ### 二进制版本
 
-从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您平台适配的压缩包, 修改默认配置文件bilibili.toml后运行即可
+从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件bilibili.toml后运行即可
 
 ### 源代码版本
 
