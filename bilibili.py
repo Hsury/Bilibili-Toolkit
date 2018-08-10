@@ -193,11 +193,13 @@ class Bilibili():
                                    'User-Agent': Bilibili.ua}
                         response = self.get(url, headers=headers, decodeLevel=1)
                         if response is None:
+                            self.log("验证码获取失败")
                             continue
-                        url = "http://101.236.6.31:8080/code"
+                        url = "http://47.95.255.188:5000/code"
                         data = {'image': base64.b64encode(response)}
-                        response = self.post(url, data=data, decodeLevel=1)
+                        response = self.post(url, data=data, decodeLevel=1, timeout=30)
                         if response is None:
+                            self.log("验证码识别失败")
                             continue
                         captcha = response.decode()
                         self.log(f"验证码识别结果为: {captcha}")
