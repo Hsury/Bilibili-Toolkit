@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.8.10-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.8.26-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -15,7 +15,7 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/8/10      |登录                          |
+|login               |2018/8/26      |登录                          |
 |query               |2018/6/20      |获取用户信息                  |
 |setPrivacy          |2018/7/24      |修改隐私设置                  |
 |silver2Coins        |2018/8/8       |银瓜子兑换硬币                |
@@ -26,7 +26,7 @@
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
 |commentLike         |2018/6/27      |评论点赞                      |
-|commentRush         |2018/6/29      |评论抢楼                      |
+|commentPost         |2018/8/26      |评论发表                      |
 |dynamicLike         |2018/6/29      |动态点赞                      |
 |dynamicRepost       |2018/6/29      |动态转发                      |
 |mallRush            |2018/7/19      |会员购抢购                    |
@@ -34,9 +34,9 @@
 |mallLottery         |2018/6/23      |会员购周年庆活动抽奖          |
 |mallPrize           |2018/6/23      |会员购周年庆活动中奖查询      |
 |mi6XLottery         |2018/6/30      |小米6X抢F码活动抽奖           |
-|liveTool            |2018/8/9       |直播助手                      |
+|liveTool            |2018/8/25      |直播助手                      |
 
-*注：liveTool组件编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
+*注：liveTool直播助手组件编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
 
 ## 使用指南
 

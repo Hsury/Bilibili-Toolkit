@@ -185,41 +185,44 @@ class Bilibili():
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
                 response = self.post(url, data=data, headers=headers)
                 if response:
-                    while response.get("code") == -105:
-                        self.cookie = f"sid={''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
-                        url = "https://passport.bilibili.com/captcha"
-                        headers = {'Cookie': self.cookie,
-                                   'Host': "passport.bilibili.com",
-                                   'User-Agent': Bilibili.ua}
-                        response = self.get(url, headers=headers, decodeLevel=1)
-                        if response is None:
-                            self.log("验证码获取失败")
-                            continue
-                        url = "http://47.95.255.188:5000/code"
-                        data = {'image': base64.b64encode(response)}
-                        response = self.post(url, data=data, decodeLevel=1, timeout=30)
-                        if response is None:
-                            self.log("验证码识别失败")
-                            continue
-                        captcha = response.decode()
-                        self.log(f"验证码识别结果为: {captcha}")
-                        url = "https://passport.bilibili.com/api/v2/oauth2/login"
-                        param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
-                        data = f"{param}&sign={self.getSign(param)}"
-                        headers = {'Content-type': "application/x-www-form-urlencoded",
-                                   'Cookie': self.cookie}
-                        response = self.post(url, data=data, headers=headers)
-                    if response.get("code") == 0:
-                        self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
-                        self.csrf = response['data']['cookie_info']['cookies'][0]['value']
-                        self.uid = response['data']['cookie_info']['cookies'][1]['value']
-                        self.accessToken = response['data']['token_info']['access_token']
-                        self.refreshToken = response['data']['token_info']['refresh_token']
-                        self.log(f"{self.username}登录成功")
-                        return True
-                    else:
-                        self.log(f"{self.username}登录失败 {response}")
-                        return False
+                    while True:
+                        if response["code"] == -105:
+                            self.cookie = f"sid={''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
+                            url = "https://passport.bilibili.com/captcha"
+                            headers = {'Cookie': self.cookie,
+                                       'Host': "passport.bilibili.com",
+                                       'User-Agent': Bilibili.ua}
+                            response = self.get(url, headers=headers, decodeLevel=1)
+                            url = "http://47.95.255.188:5000/code"
+                            data = {'image': base64.b64encode(response)}
+                            response = self.post(url, data=data, decodeLevel=1, timeout=15)
+                            captcha = response.decode() if response and len(response) == 5 else None
+                            if captcha:
+                                self.log(f"验证码识别结果为: {captcha}")
+                                url = "https://passport.bilibili.com/api/v2/oauth2/login"
+                                param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
+                                data = f"{param}&sign={self.getSign(param)}"
+                                headers = {'Content-type': "application/x-www-form-urlencoded",
+                                           'Cookie': self.cookie}
+                                response = self.post(url, data=data, headers=headers)
+                            else:
+                                self.log(f"验证码识别服务暂时不可用, {'尝试更换代理' if self.proxy else '30秒后重试'}")
+                                if self.proxy:
+                                    self.setProxy()
+                                else:
+                                    time.sleep(30)
+                                break
+                        elif response["code"] == 0:
+                            self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
+                            self.csrf = response['data']['cookie_info']['cookies'][0]['value']
+                            self.uid = response['data']['cookie_info']['cookies'][1]['value']
+                            self.accessToken = response['data']['token_info']['access_token']
+                            self.refreshToken = response['data']['token_info']['refresh_token']
+                            self.log(f"{self.username}登录成功")
+                            return True
+                        else:
+                            self.log(f"{self.username}登录失败 {response}")
+                            return False
                 else:
                     if not freeze:
                         self.log("当前IP登录过于频繁, 进入冷却模式")
@@ -332,7 +335,7 @@ class Bilibili():
             return False
     
     # 银瓜子兑换硬币
-    def silver2Coins(self, app=True, pc=True):
+    def silver2Coins(self, app=True, pc=False):
         # app = APP通道
         # pc = PC通道
         if app:
@@ -413,7 +416,7 @@ class Bilibili():
             return False
     
     # 投币
-    def reward(self, aid, double):
+    def reward(self, aid, double=True):
         # aid = 稿件av号
         # double = 双倍投币
         url = "https://api.bilibili.com/x/web-interface/coin/add"
@@ -487,7 +490,7 @@ class Bilibili():
             return False
     
     # 关注
-    def follow(self, mid, secret):
+    def follow(self, mid, secret=False):
         # mid = 被关注用户UID
         # secret = 悄悄关注
         url = "https://api.bilibili.com/x/relation/modify"
@@ -546,12 +549,13 @@ class Bilibili():
             self.log(f"评论{rpid}点赞失败 {response}")
             return False
     
-    # 评论抢楼
-    def commentRush(self, otype, oid, floor, message):
+    # 评论发表
+    def commentPost(self, otype, oid, message, floor=0, critical=1):
         # otype = 作品类型
         # oid = 作品ID
-        # floor = 抢楼楼层
         # message = 评论内容
+        # floor = 目标楼层
+        # critical = 临界范围
         patterns = {'video': {'id': 1,
                               'prefix': "https://www.bilibili.com/video/av"},
                     'activity': {'id': 4,
@@ -560,7 +564,6 @@ class Bilibili():
                                 'prefix': "https://h.bilibili.com/"},
                     'article': {'id': 12,
                                 'prefix': "https://www.bilibili.com/read/cv"}}
-        critical = 3
         if patterns.get(otype) is None:
             self.log("不支持的作品类型")
             return False
@@ -572,12 +575,12 @@ class Bilibili():
             response = self.get(url, headers=headers)
             if response and response.get("code") == 0:
                 currentFloor = response['data']['replies'][0]['floor']
-                deltaFloor = floor - currentFloor
-                if deltaFloor > critical:
+                deltaFloor = floor - currentFloor if floor else 1
+                if deltaFloor > max(1, critical):
                     self.log(f"当前评论楼层数为{currentFloor}, 距离目标楼层还有{deltaFloor}层")
                     time.sleep(min(3, max(0, (deltaFloor - 10) * 0.1)))
                 elif deltaFloor > 0:
-                    self.log(f"当前评论楼层数为{currentFloor}, 开始抢楼")
+                    self.log(f"当前评论楼层数为{currentFloor}, 开始提交评论")
                     url = "https://api.bilibili.com/x/v2/reply/add"
                     data = {'oid': oid,
                             'type': patterns[otype]['id'],
@@ -592,16 +595,15 @@ class Bilibili():
                                'Referer': f"{patterns[otype]['prefix']}{oid}",
                                'User-Agent': Bilibili.ua}
                     success = 0
-                    while True:
+                    while success < deltaFloor:
                         response = self.post(url, data=data, headers=headers)
                         if response and response.get("code") == 0:
                             success += 1
                             self.log(f"评论({success}/{deltaFloor})提交成功")
                         else:
                             self.log(f"评论({success}/{deltaFloor})提交失败 {response}")
-                        if success >= deltaFloor:
-                            self.log("停止抢楼")
-                            break
+                    if not floor:
+                        break
                 else:
                     self.log(f"当前评论楼层数为{currentFloor}, 目标楼层已过")
                     break
@@ -915,11 +917,11 @@ def wrapper(arg):
     addInterval = lambda func, delay: time.sleep(delay)
     config, account = arg['config'], arg['account']
     instance = Bilibili()
+    if config['proxy']['enable']:
+        instance.addProxy(config['proxy']['pool'])
+        instance.setProxy()
     instance.importCredential(account)
     if instance.login():
-        if config['proxy']['enable']:
-            instance.addProxy(config['proxy']['pool'])
-            instance.setProxy()
         threads = []
         if config['query']['enable']:
             threads.append(threading.Thread(target=instance.query))
@@ -941,9 +943,9 @@ def wrapper(arg):
             threads.append(threading.Thread(target=lambda: [addInterval(instance.follow(mid, secret), 1) for mid, secret in zip(config['follow']['mid'], config['follow']['secret'])]))
         if config['commentLike']['enable']:
             threads.append(threading.Thread(target=lambda: [addInterval(instance.commentLike(otype, oid, rpid), 1) for otype, oid, rpid in zip(config['commentLike']['otype'], config['commentLike']['oid'], config['commentLike']['rpid'])]))
-        if config['commentRush']['enable']:
-            for comment in zip(config['commentRush']['otype'], config['commentRush']['oid'], config['commentRush']['floor'], config['commentRush']['message']):
-                threads.append(threading.Thread(target=instance.commentRush, args=(comment[0], comment[1], comment[2], comment[3])))
+        if config['commentPost']['enable']:
+            for comment in zip(config['commentPost']['otype'], config['commentPost']['oid'], config['commentPost']['message'], config['commentPost']['floor'], config['commentPost']['critical']):
+                threads.append(threading.Thread(target=instance.commentPost, args=(comment[0], comment[1], comment[2], comment[3], comment[4])))
         if config['dynamicLike']['enable']:
             threads.append(threading.Thread(target=lambda: [addInterval(instance.dynamicLike(did), 1) for did in config['dynamicLike']['did']]))
         if config['dynamicRepost']['enable']:
@@ -1048,7 +1050,7 @@ def main():
                     LiveToolCurrentCommit = f.read()
             except:
                 LiveToolCurrentCommit = None
-            liveToolLatestCommit = LiveToolCurrentCommit if LiveToolCurrentCommit else "e4d6c87"
+            liveToolLatestCommit = LiveToolCurrentCommit if LiveToolCurrentCommit else "77c4c85"
             if config['liveTool']['autoUpdate']:
                 try:
                     liveToolLatestCommit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()["tag_name"]
