@@ -186,10 +186,10 @@ class Bilibili():
                 response = self.post(url, data=data, headers=headers)
                 if response:
                     while True:
-                        if response["code"] == -105:
-                            self.cookie = f"sid={''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
+                        if response['code'] == -105:
+                            sid = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
                             url = "https://passport.bilibili.com/captcha"
-                            headers = {'Cookie': self.cookie,
+                            headers = {'Cookie': f"sid={sid}",
                                        'Host': "passport.bilibili.com",
                                        'User-Agent': Bilibili.ua}
                             response = self.get(url, headers=headers, decodeLevel=1)
@@ -203,7 +203,7 @@ class Bilibili():
                                 param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
                                 data = f"{param}&sign={self.getSign(param)}"
                                 headers = {'Content-type': "application/x-www-form-urlencoded",
-                                           'Cookie': self.cookie}
+                                           'Cookie': f"sid={sid}"}
                                 response = self.post(url, data=data, headers=headers)
                             else:
                                 self.log(f"验证码识别服务暂时不可用, {'尝试更换代理' if self.proxy else '30秒后重试'}")
@@ -212,7 +212,7 @@ class Bilibili():
                                 else:
                                     time.sleep(30)
                                 break
-                        elif response["code"] == 0:
+                        elif response['code'] == 0 and response['data']['status'] == 0:
                             self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
                             self.csrf = response['data']['cookie_info']['cookies'][0]['value']
                             self.uid = response['data']['cookie_info']['cookies'][1]['value']
@@ -1018,7 +1018,7 @@ def main():
                 os.system(f"{prefix}yum -y install chromedriver")
         elif platform.system() == "Windows":
             if not os.path.exists("chrome-win32\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/579032/chrome-win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/583214/chrome-win32.zip"))
             if not os.path.exists("chromedriver.exe"):
                 decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.41/chromedriver_win32.zip"))
         else:
@@ -1053,7 +1053,7 @@ def main():
             liveToolLatestCommit = LiveToolCurrentCommit if LiveToolCurrentCommit else "77c4c85"
             if config['liveTool']['autoUpdate']:
                 try:
-                    liveToolLatestCommit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()["tag_name"]
+                    liveToolLatestCommit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()['tag_name']
                     if LiveToolCurrentCommit and LiveToolCurrentCommit != liveToolLatestCommit:
                         print("发现新版本直播助手组件", flush=True)
                 except:
