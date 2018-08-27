@@ -33,28 +33,14 @@ class Bilibili():
         self.refreshToken = ""
         self.username = ""
         self.password = ""
-        self.info = {'nickname': "",
-                     'face': "",
+        self.info = {'ban': False,
                      'coins': 0,
-                     'main': {'level': 0,
-                              'experience': {'current': 0,
-                                             'next': 0},
-                              'tasks': {'login': False,
-                                        'watch': False,
-                                        'reward': 0,
-                                        'share': False},
-                              'security': {'email': False,
-                                           'phone': False,
-                                           'safeQuestion': False,
-                                           'realName': False}},
-                     'live': {'level': 0,
-                              'experience': {'current': 0,
-                                             'next': 0},
-                              'rank': "",
-                              'vip': False,
-                              'silver': 0,
-                              'gold': 0,
-                              'achievement': 0}}
+                     'experience': {'current': 0,
+                                    'next': 0},
+                     'face': "",
+                     'join': "",
+                     'level': 0,
+                     'nickname': ""}
         self.proxy = None
         self.proxyPool = set()
     
@@ -177,7 +163,6 @@ class Bilibili():
             else:
                 self.log(f"Key获取失败 {response}")
                 return False
-            freeze = False
             while True:
                 url = "https://passport.bilibili.com/api/v2/oauth2/login"
                 param = f"appkey={Bilibili.appKey}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
@@ -198,7 +183,7 @@ class Bilibili():
                             response = self.post(url, data=data, decodeLevel=1, timeout=15)
                             captcha = response.decode() if response and len(response) == 5 else None
                             if captcha:
-                                self.log(f"验证码识别结果为: {captcha}")
+                                self.log(f"验证码识别结果: {captcha}")
                                 url = "https://passport.bilibili.com/api/v2/oauth2/login"
                                 param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
                                 data = f"{param}&sign={self.getSign(param)}"
@@ -224,10 +209,11 @@ class Bilibili():
                             self.log(f"{self.username}登录失败 {response}")
                             return False
                 else:
-                    if not freeze:
-                        self.log("当前IP登录过于频繁, 进入冷却模式")
-                        freeze = True
-                    time.sleep(5)
+                    self.log(f"当前IP登录过于频繁, {'尝试更换代理' if self.proxy else '30秒后重试'}")
+                    if self.proxy:
+                        self.setProxy()
+                    else:
+                        time.sleep(30)
         
         if self.cookie and useCookie():
             return True
@@ -240,51 +226,26 @@ class Bilibili():
     
     # 获取用户信息
     def query(self):
-        url = "https://account.bilibili.com/home/reward"
+        url = "https://api.bilibili.com/x/space/myinfo?jsonp=jsonp"
         headers = {'Cookie': self.cookie,
-                   'Referer': "https://account.bilibili.com/account/home",
+                   'Host': "api.bilibili.com",
+                   'Referer': f"https://space.bilibili.com/{self.uid}/",
                    'User-Agent': Bilibili.ua}
         response = self.get(url, headers=headers)
         if response and response.get("code") == 0:
-            self.info['main']['level'] = response['data']['level_info']['current_level']
-            self.info['main']['experience']['current'] = response['data']['level_info']['current_exp']
-            self.info['main']['experience']['next'] = response['data']['level_info']['next_exp']
-            self.info['main']['tasks']['login'] = response['data']['login']
-            self.info['main']['tasks']['watch'] = response['data']['watch_av']
-            self.info['main']['tasks']['reward'] = response['data']['coins_av']
-            self.info['main']['tasks']['share'] = response['data']['share_av']
-            self.info['main']['security']['email'] = response['data']['email']
-            self.info['main']['security']['phone'] = response['data']['tel']
-            self.info['main']['security']['safeQuestion'] = response['data']['safequestion']
-            self.info['main']['security']['realName'] = response['data']['identify_card']
-            self.log("主站信息获取成功")
-        else:
-            self.log("主站信息获取失败")
-        url = "https://api.live.bilibili.com/User/getUserInfo"
-        headers = {'Cookie': self.cookie,
-                   'Host': "api.live.bilibili.com",
-                   'User-Agent': Bilibili.ua}
-        response = self.get(url, headers=headers)
-        if response and response.get("code") == "REPONSE_OK":
-            self.info['nickname'] = response['data']['uname']
+            self.info['ban'] = bool(response['data']['silence'])
+            self.info['coins'] = response['data']['coins']
+            self.info['experience']['current'] = response['data']['level_exp']['current_exp']
+            self.info['experience']['next'] = response['data']['level_exp']['next_exp']
             self.info['face'] = response['data']['face']
-            self.info['coins'] = response['data']['billCoin']
-            self.info['live']['level'] = response['data']['user_level']
-            self.info['live']['experience']['current'] = response['data']['user_intimacy']
-            self.info['live']['experience']['next'] = response['data']['user_next_intimacy']
-            self.info['live']['rank'] = response['data']['user_level_rank']
-            self.info['live']['vip'] = response['data']['vip'] or response['data']['svip']
-            self.info['live']['silver'] = response['data']['silver']
-            self.info['live']['gold'] = response['data']['gold']
-            self.info['live']['achievement'] = response['data']['achieve']
-            self.log("直播信息获取成功")
+            self.info['join'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(response['data']['jointime']))
+            self.info['level'] = response['data']['level']
+            self.info['nickname'] = response['data']['name']
+            self.log(f"{self.info['nickname']}, Lv.{self.info['level']}({self.info['experience']['current']}/{self.info['experience']['next']}), 拥有{self.info['coins']}枚硬币, 注册于{self.info['join']}, 账号{'状态正常' if not self.info['ban'] else '被封禁'}")
+            return True
         else:
-            self.log("直播信息获取失败")
-        self.log(f"昵称: {self.info['nickname']}")
-        self.log(f"等级: 主站LV{self.info['main']['level']}({self.info['main']['experience']['current']}/{self.info['main']['experience']['next']}) 直播LV{self.info['live']['level']}({self.info['live']['experience']['current']}/{self.info['live']['experience']['next']})")
-        self.log(f"资产: 硬币{self.info['coins']} 银瓜子{self.info['live']['silver']} 金瓜子{self.info['live']['gold']}")
-        self.log(f"每日任务: 登录({'✓' if self.info['main']['tasks']['login'] else '✕'}) 观看视频({'✓' if self.info['main']['tasks']['watch'] else '✕'}) 投币({self.info['main']['tasks']['reward'] // 10}/5) 分享视频({'✓' if self.info['main']['tasks']['share'] else '✕'})")
-        self.log(f"账号安全: 邮箱({'✓' if self.info['main']['security']['email'] else '✕'}) 手机({'✓' if self.info['main']['security']['phone'] else '✕'}) 密保({'✓' if self.info['main']['security']['safeQuestion'] else '✕'}) 实名认证({'✓' if self.info['main']['security']['realName'] else '✕'})")
+            self.log("用户信息获取失败")
+            return False
     
     # 修改隐私设置
     def setPrivacy(self, showFavourite=None, showBangumi=None, showTag=None, showReward=None, showInfo=None, showGame=None):
