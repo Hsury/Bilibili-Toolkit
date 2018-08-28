@@ -25,7 +25,7 @@ class Bilibili():
     appKey = "1d8b6e7d45233436"
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
     
-    def __init__(self):
+    def __init__(self, https=True):
         self.cookie = ""
         self.csrf = ""
         self.uid = ""
@@ -41,6 +41,7 @@ class Bilibili():
                      'join': "",
                      'level': 0,
                      'nickname': ""}
+        self.protocol = "https" if https else "http"
         self.proxy = None
         self.proxyPool = set()
     
@@ -75,8 +76,8 @@ class Bilibili():
     
     def setProxy(self):
         proxy = random.sample(self.proxyPool, 1)[0]
-        self.proxy = {'https': f"https://{proxy}"}
-        self.log(f"使用代理: {proxy}")
+        self.proxy = {self.protocol: f"{self.protocol}://{proxy}"}
+        self.log(f"使用{self.protocol.upper()}代理: {proxy}")
     
     def getSign(self, param):
         salt = "560c52ccd288fed045859ed18bffd973"
@@ -104,7 +105,7 @@ class Bilibili():
     # 登录
     def login(self):
         def useCookie():
-            url = "https://api.bilibili.com/x/space/myinfo"
+            url = f"{self.protocol}://api.bilibili.com/x/space/myinfo"
             headers = {'Cookie': self.cookie,
                        'Host': "api.bilibili.com",
                        'User-Agent': Bilibili.ua}
@@ -119,21 +120,21 @@ class Bilibili():
         
         def useToken():
             param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
-            url = f"https://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.getSign(param)}"
+            url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.getSign(param)}"
             response = self.get(url)
             if response and response.get("code") == 0:
                 self.uid = response['data']['mid']
                 self.log(f"Token仍有效, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['expires_in'])))}")
                 if not self.cookie:
-                    param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&gourl=https%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
-                    url = f"https://passport.bilibili.com/api/login/sso?{param}&sign={self.getSign(param)}"
+                    param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&gourl={self.protocol}%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
+                    url = f"{self.protocol}://passport.bilibili.com/api/login/sso?{param}&sign={self.getSign(param)}"
                     session = requests.session()
                     session.get(url)
                     self.importCredential(session.cookies.get_dict())
                 return True
             else:
                 self.log(f"Token已失效")
-                url = "https://passport.bilibili.com/api/v2/oauth2/refresh_token"
+                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/refresh_token"
                 param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&refresh_token={self.refreshToken}&ts={int(time.time())}"
                 data = f"{param}&sign={self.getSign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
@@ -153,7 +154,7 @@ class Bilibili():
             return False
         
         def usePassword():
-            url = "https://passport.bilibili.com/api/oauth2/getKey"
+            url = f"{self.protocol}://passport.bilibili.com/api/oauth2/getKey"
             data = {'appkey': Bilibili.appKey,
                     'sign': self.getSign(f"appkey={Bilibili.appKey}")}
             response = self.post(url, data=data)
@@ -164,7 +165,7 @@ class Bilibili():
                 self.log(f"Key获取失败 {response}")
                 return False
             while True:
-                url = "https://passport.bilibili.com/api/v2/oauth2/login"
+                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
                 param = f"appkey={Bilibili.appKey}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
                 data = f"{param}&sign={self.getSign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
@@ -173,7 +174,7 @@ class Bilibili():
                     while True:
                         if response['code'] == -105:
                             sid = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
-                            url = "https://passport.bilibili.com/captcha"
+                            url = f"{self.protocol}://passport.bilibili.com/captcha"
                             headers = {'Cookie': f"sid={sid}",
                                        'Host': "passport.bilibili.com",
                                        'User-Agent': Bilibili.ua}
@@ -184,7 +185,7 @@ class Bilibili():
                             captcha = response.decode() if response and len(response) == 5 else None
                             if captcha:
                                 self.log(f"验证码识别结果: {captcha}")
-                                url = "https://passport.bilibili.com/api/v2/oauth2/login"
+                                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
                                 param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
                                 data = f"{param}&sign={self.getSign(param)}"
                                 headers = {'Content-type': "application/x-www-form-urlencoded",
@@ -226,7 +227,7 @@ class Bilibili():
     
     # 获取用户信息
     def query(self):
-        url = "https://api.bilibili.com/x/space/myinfo?jsonp=jsonp"
+        url = f"{self.protocol}://api.bilibili.com/x/space/myinfo?jsonp=jsonp"
         headers = {'Cookie': self.cookie,
                    'Host': "api.bilibili.com",
                    'Referer': f"https://space.bilibili.com/{self.uid}/",
@@ -261,7 +262,7 @@ class Bilibili():
                    'coins_video': showReward,
                    'user_info': showInfo,
                    'played_game': showGame}
-        url = f"https://space.bilibili.com/ajax/settings/getSettings?mid={self.uid}"
+        url = f"{self.protocol}://space.bilibili.com/ajax/settings/getSettings?mid={self.uid}"
         headers = {'Cookie': self.cookie,
                    'Host': "space.bilibili.com",
                    'Referer': f"https://space.bilibili.com/{self.uid}/",
@@ -274,7 +275,7 @@ class Bilibili():
         else:
             self.log(f"隐私设置获取失败 {response}")
             return False
-        url = "https://space.bilibili.com/ajax/settings/setPrivacy"
+        url = f"{self.protocol}://space.bilibili.com/ajax/settings/setPrivacy"
         headers = {'Cookie': self.cookie,
                    'Host': "space.bilibili.com",
                    'Origin': "https://space.bilibili.com",
@@ -301,7 +302,7 @@ class Bilibili():
         # pc = PC通道
         if app:
             param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
-            url = f"https://api.live.bilibili.com/AppExchange/silver2coin?{param}&sign={self.getSign(param)}"
+            url = f"{self.protocol}://api.live.bilibili.com/AppExchange/silver2coin?{param}&sign={self.getSign(param)}"
             headers = {'Cookie': self.cookie}
             response = self.get(url, headers=headers)
             if response and response.get("code") == 0:
@@ -309,7 +310,7 @@ class Bilibili():
             else:
                 self.log(f"银瓜子兑换硬币(APP通道)失败 {response}")
         if pc:
-            url = "https://api.live.bilibili.com/pay/v1/Exchange/silver2coin"
+            url = f"{self.protocol}://api.live.bilibili.com/pay/v1/Exchange/silver2coin"
             data = {'platform': "pc",
                     'csrf_token': self.csrf}
             headers = {'Cookie': self.cookie,
@@ -326,14 +327,14 @@ class Bilibili():
     # 观看
     def watch(self, aid):
         # aid = 稿件av号
-        url = f"https://www.bilibili.com/widget/getPageList?aid={aid}"
+        url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
         response = self.get(url)
         if response:
-            cid = response[0]['cid']
+            cid = response['data']['cid']
         else:
-            self.log("cid解析失败")
+            self.log(f"av{aid}信息解析失败")
             return False
-        url = "https://api.bilibili.com/x/report/web/heartbeat"
+        url = f"{self.protocol}://api.bilibili.com/x/report/web/heartbeat"
         data = {'aid': aid,
                 'cid': cid,
                 'mid': self.uid,
@@ -359,7 +360,7 @@ class Bilibili():
     # 好评
     def like(self, aid):
         # aid = 稿件av号
-        url = "https://api.bilibili.com/x/web-interface/archive/like"
+        url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like"
         data = {'aid': aid,
                 'like': 1,
                 'csrf': self.csrf}
@@ -380,7 +381,7 @@ class Bilibili():
     def reward(self, aid, double=True):
         # aid = 稿件av号
         # double = 双倍投币
-        url = "https://api.bilibili.com/x/web-interface/coin/add"
+        url = f"{self.protocol}://api.bilibili.com/x/web-interface/coin/add"
         data = {'aid': aid,
                 'multiply': 2 if double else 1,
                 'cross_domain': "true",
@@ -401,7 +402,7 @@ class Bilibili():
     # 收藏
     def favour(self, aid):
         # aid = 稿件av号
-        url = "https://api.bilibili.com/x/v2/fav/folder"
+        url = f"{self.protocol}://api.bilibili.com/x/v2/fav/folder"
         headers = {'Cookie': self.cookie,
                    'Host': "api.bilibili.com",
                    'User-Agent': Bilibili.ua}
@@ -412,7 +413,7 @@ class Bilibili():
             self.log("fid获取失败")
             return False
         time.sleep(1)
-        url = "https://api.bilibili.com/x/v2/fav/video/add"
+        url = f"{self.protocol}://api.bilibili.com/x/v2/fav/video/add"
         data = {'aid': aid,
                 'fid': fid,
                 'jsonp': "jsonp",
@@ -433,7 +434,7 @@ class Bilibili():
     # 分享
     def share(self, aid):
         # aid = 稿件av号
-        url = "https://api.bilibili.com/x/web-interface/share/add"
+        url = f"{self.protocol}://api.bilibili.com/x/web-interface/share/add"
         data = {'aid': aid,
                 'jsonp': "jsonp",
                 'csrf': self.csrf}
@@ -454,7 +455,7 @@ class Bilibili():
     def follow(self, mid, secret=False):
         # mid = 被关注用户UID
         # secret = 悄悄关注
-        url = "https://api.bilibili.com/x/relation/modify"
+        url = f"{self.protocol}://api.bilibili.com/x/relation/modify"
         data = {'fid': mid,
                 'act': 3 if secret else 1,
                 're_src': 11,
@@ -473,6 +474,50 @@ class Bilibili():
             self.log(f"用户{mid}{'悄悄' if secret else ''}关注失败 {response}")
             return False
     
+    # 弹幕发送
+    def danmakuPost(self, aid, message, moment=-1):
+        # aid = 稿件av号
+        # message = 弹幕内容
+        # moment = 弹幕发送时间
+        url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
+        response = self.get(url)
+        if response:
+            oid = response['data']['cid']
+            duration = response['data']['duration']
+        else:
+            self.log(f"av{aid}信息解析失败")
+            return False
+        while True:
+            url = f"{self.protocol}://api.bilibili.com/x/v2/dm/post"
+            data = {'type': 1,
+                    'oid': oid,
+                    'msg': message,
+                    'aid': aid,
+                    'progress': int(moment * 1000) if moment != -1 else random.randint(0, duration * 1000),
+                    'color': 16777215,
+                    'fontsize': 25,
+                    'pool': 0,
+                    'mode': 1,
+                    'rnd': int(time.time() * 1000000),
+                    'plat': 1,
+                    'csrf': self.csrf}
+            headers = {'Cookie': self.cookie,
+                       'Host': "api.bilibili.com",
+                       'Origin': "https://www.bilibili.com",
+                       'Referer': f"https://www.bilibili.com/video/av{aid}",
+                       'User-Agent': Bilibili.ua}
+            response = self.post(url, data=data, headers=headers)
+            if response and response.get("code") is not None:
+                if response['code'] == 0:
+                    self.log(f"av{aid}弹幕\"{message}\"发送成功")
+                    return True
+                elif response['code'] == 36703:
+                    self.log(f"av{aid}弹幕发送频率过快, 10秒后重试")
+                    time.sleep(10)
+                else:
+                    self.log(f"av{aid}弹幕\"{message}\"发送失败 {response}")
+                    return False
+    
     # 评论点赞
     def commentLike(self, otype, oid, rpid):
         # otype = 作品类型
@@ -489,7 +534,7 @@ class Bilibili():
         if patterns.get(otype) is None:
             self.log("不支持的作品类型")
             return False
-        url = "https://api.bilibili.com/x/v2/reply/action"
+        url = f"{self.protocol}://api.bilibili.com/x/v2/reply/action"
         data = {'oid': oid,
                 'type': patterns[otype]['id'],
                 'rpid': rpid,
@@ -529,7 +574,7 @@ class Bilibili():
             self.log("不支持的作品类型")
             return False
         while True:
-            url = f"https://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={patterns[otype]['id']}&oid={oid}&sort=0&_={int(time.time())}"
+            url = f"{self.protocol}://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={patterns[otype]['id']}&oid={oid}&sort=0&_={int(time.time())}"
             headers = {'Host': "api.bilibili.com",
                        'Referer': f"{patterns[otype]['prefix']}{oid}",
                        'User-Agent': Bilibili.ua}
@@ -542,7 +587,7 @@ class Bilibili():
                     time.sleep(min(3, max(0, (deltaFloor - 10) * 0.1)))
                 elif deltaFloor > 0:
                     self.log(f"当前评论楼层数为{currentFloor}, 开始提交评论")
-                    url = "https://api.bilibili.com/x/v2/reply/add"
+                    url = f"{self.protocol}://api.bilibili.com/x/v2/reply/add"
                     data = {'oid': oid,
                             'type': patterns[otype]['id'],
                             'message': message,
@@ -575,7 +620,7 @@ class Bilibili():
     # 动态点赞
     def dynamicLike(self, did):
         # did = 动态ID
-        url = "https://api.vc.bilibili.com/dynamic_like/v1/dynamic_like/thumb"
+        url = f"{self.protocol}://api.vc.bilibili.com/dynamic_like/v1/dynamic_like/thumb"
         data = {'uid': self.uid,
                 'dynamic_id': did,
                 'up': 1,
@@ -598,7 +643,7 @@ class Bilibili():
     def dynamicRepost(self, did, message):
         # did = 动态ID
         # message = 转发内容
-        url = "https://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost"
+        url = f"{self.protocol}://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost"
         data = {'uid': self.uid,
                 'dynamic_id': did,
                 'content': message,
@@ -696,7 +741,7 @@ class Bilibili():
         # mid = 被助力用户UID
         if not (self.info['nickname'] and self.info['face']):
             self.query()
-        url = "https://space.bilibili.com/ajax/member/GetInfo"
+        url = f"{self.protocol}://space.bilibili.com/ajax/member/GetInfo"
         data = f"mid={mid}&csrf="
         headers = {'Content-Type': "application/x-www-form-urlencoded",
                    'Host': "space.bilibili.com",
@@ -798,7 +843,7 @@ class Bilibili():
     
     # 小米6X抢F码活动抽奖
     def mi6XLottery(self):
-        url = "https://www.bilibili.com/matsuri/get/act/mylotterytimes?act_id=159"
+        url = f"{self.protocol}://www.bilibili.com/matsuri/get/act/mylotterytimes?act_id=159"
         headers = {'Cookie': self.cookie,
                    'Host': "www.bilibili.com",
                    'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
@@ -806,7 +851,7 @@ class Bilibili():
         response = self.get(url, headers=headers)
         attempts = 0
         while True:
-            url = "https://www.bilibili.com/matsuri/index?act_id=159"
+            url = f"{self.protocol}://www.bilibili.com/matsuri/index?act_id=159"
             headers = {'Cookie': self.cookie,
                        'Host': "www.bilibili.com",
                        'Origin': "https://www.bilibili.com",
@@ -821,7 +866,7 @@ class Bilibili():
                     attempts += 1
                     self.log(f"第{attempts}次抽奖, 未中奖")
                 elif response['code'] == -30011:
-                    url = "https://www.bilibili.com/matsuri/add/lottery/times?act_id=159"
+                    url = f"{self.protocol}://www.bilibili.com/matsuri/add/lottery/times?act_id=159"
                     headers = {'Cookie': self.cookie,
                                'Host': "www.bilibili.com",
                                'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
@@ -877,7 +922,7 @@ def decompress(file, remove=True):
 def wrapper(arg):
     addInterval = lambda func, delay: time.sleep(delay)
     config, account = arg['config'], arg['account']
-    instance = Bilibili()
+    instance = Bilibili(config['proxy']['https'])
     if config['proxy']['enable']:
         instance.addProxy(config['proxy']['pool'])
         instance.setProxy()
@@ -902,6 +947,9 @@ def wrapper(arg):
             threads.append(threading.Thread(target=lambda: [addInterval(instance.share(aid), 1) for aid in config['share']['aid']]))
         if config['follow']['enable']:
             threads.append(threading.Thread(target=lambda: [addInterval(instance.follow(mid, secret), 1) for mid, secret in zip(config['follow']['mid'], config['follow']['secret'])]))
+        if config['danmakuPost']['enable']:
+            for danmaku in zip(config['danmakuPost']['aid'], config['danmakuPost']['message'], config['danmakuPost']['moment']):
+                threads.append(threading.Thread(target=instance.danmakuPost, args=(danmaku[0], danmaku[1], danmaku[2])))
         if config['commentLike']['enable']:
             threads.append(threading.Thread(target=lambda: [addInterval(instance.commentLike(otype, oid, rpid), 1) for otype, oid, rpid in zip(config['commentLike']['otype'], config['commentLike']['oid'], config['commentLike']['rpid'])]))
         if config['commentPost']['enable']:

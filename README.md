@@ -25,6 +25,7 @@
 |favour              |2018/6/20      |收藏                          |
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
+|danmakuPost         |2018/8/28      |弹幕发送                      |
 |commentLike         |2018/6/27      |评论点赞                      |
 |commentPost         |2018/8/26      |评论发表                      |
 |dynamicLike         |2018/6/29      |动态点赞                      |
