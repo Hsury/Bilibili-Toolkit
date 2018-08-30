@@ -29,6 +29,7 @@ class Bilibili():
         self.cookie = ""
         self.csrf = ""
         self.uid = ""
+        self.sid = ""
         self.accessToken = ""
         self.refreshToken = ""
         self.username = ""
@@ -48,7 +49,7 @@ class Bilibili():
     def log(self, message):
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.uid}] {message}", flush=True)
     
-    def get(self, url, headers=None, decodeLevel=2, timeout=10, retry=5):
+    def get(self, url, headers=None, decodeLevel=2, timeout=15, retry=10):
         for i in range(retry + 1):
             try:
                 response = requests.get(url, headers=headers, timeout=timeout, proxies=self.proxy)
@@ -58,7 +59,7 @@ class Bilibili():
                     self.setProxy()
         return None
     
-    def post(self, url, data=None, headers=None, decodeLevel=2, timeout=10, retry=5):
+    def post(self, url, data=None, headers=None, decodeLevel=2, timeout=15, retry=10):
         for i in range(retry + 1):
             try:
                 response = requests.post(url, data=data, headers=headers, timeout=timeout, proxies=self.proxy)
@@ -92,6 +93,8 @@ class Bilibili():
                     self.csrf = value
                 elif key == "DedeUserID":
                     self.uid = value
+                elif key == "sid":
+                    self.sid = value
                 self.cookie = f"{self.cookie}{key}={value};"
             elif key == "accessToken":
                 self.accessToken = value
@@ -104,7 +107,7 @@ class Bilibili():
     
     # 登录
     def login(self):
-        def useCookie():
+        def byCookie():
             url = f"{self.protocol}://api.bilibili.com/x/space/myinfo"
             headers = {'Cookie': self.cookie,
                        'Host': "api.bilibili.com",
@@ -118,7 +121,7 @@ class Bilibili():
                 self.log("Cookie已失效")
                 return False
         
-        def useToken():
+        def byToken():
             param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&ts={int(time.time())}"
             url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.getSign(param)}"
             response = self.get(url)
@@ -143,9 +146,10 @@ class Bilibili():
                     self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
                     self.csrf = response['data']['cookie_info']['cookies'][0]['value']
                     self.uid = response['data']['cookie_info']['cookies'][1]['value']
+                    self.sid = response['data']['cookie_info']['cookies'][3]['value']
                     self.accessToken = response['data']['token_info']['access_token']
                     self.refreshToken = response['data']['token_info']['refresh_token']
-                    self.log(f"Token刷新成功, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['expires_in'])))}")
+                    self.log(f"Token刷新成功, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['token_info']['expires_in'])))}")
                     return True
                 else:
                     self.accessToken = ""
@@ -153,7 +157,7 @@ class Bilibili():
                     self.log("Token刷新失败")
             return False
         
-        def usePassword():
+        def byPassword():
             url = f"{self.protocol}://passport.bilibili.com/api/oauth2/getKey"
             data = {'appkey': Bilibili.appKey,
                     'sign': self.getSign(f"appkey={Bilibili.appKey}")}
@@ -202,6 +206,7 @@ class Bilibili():
                             self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
                             self.csrf = response['data']['cookie_info']['cookies'][0]['value']
                             self.uid = response['data']['cookie_info']['cookies'][1]['value']
+                            self.sid = response['data']['cookie_info']['cookies'][3]['value']
                             self.accessToken = response['data']['token_info']['access_token']
                             self.refreshToken = response['data']['token_info']['refresh_token']
                             self.log(f"{self.username}登录成功")
@@ -216,11 +221,11 @@ class Bilibili():
                     else:
                         time.sleep(30)
         
-        if self.cookie and useCookie():
+        if self.cookie and byCookie():
             return True
-        elif self.accessToken and self.refreshToken and useToken():
+        elif self.accessToken and self.refreshToken and byToken():
             return True
-        elif self.username and self.password and usePassword():
+        elif self.username and self.password and byPassword():
             return True
         else:
             return False
@@ -331,31 +336,52 @@ class Bilibili():
         response = self.get(url)
         if response:
             cid = response['data']['cid']
+            duration = response['data']['duration']
         else:
             self.log(f"av{aid}信息解析失败")
             return False
-        url = f"{self.protocol}://api.bilibili.com/x/report/web/heartbeat"
+        url = f"{self.protocol}://api.bilibili.com/x/report/click/h5"
         data = {'aid': aid,
                 'cid': cid,
+                'part': 1,
+                'did': self.sid,
+                'ftime': int(time.time()),
+                'jsonp': "jsonp",
+                'lv': None,
                 'mid': self.uid,
                 'csrf': self.csrf,
-                'played_time': 0,
-                'realtime': 0,
-                'start_ts': int(time.time()),
-                'type': 3,
-                'dt': 2,
-                'play_type': 1}
+                'stime': int(time.time())}
         headers = {'Cookie': self.cookie,
                    'Host': "api.bilibili.com",
+                   'Origin': "https://www.bilibili.com",
                    'Referer': f"https://www.bilibili.com/video/av{aid}",
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
-        if response and response['code'] == 0 or response is None:
-            self.log(f"av{aid}观看成功")
-            return True
-        else:
-            self.log(f"av{aid}观看失败 {response}")
-            return False
+        if response and response.get("code") == 0:
+            url = f"{self.protocol}://api.bilibili.com/x/report/web/heartbeat"
+            data = {'aid': aid,
+                    'cid': cid,
+                    'jsonp': "jsonp",
+                    'mid': self.uid,
+                    'csrf': self.csrf,
+                    'played_time': 0,
+                    'pause': False,
+                    'realtime': duration,
+                    'dt': 7,
+                    'play_type': 1,
+                    'start_ts': int(time.time())}
+            response = self.post(url, data=data, headers=headers)
+            if response and response.get("code") == 0:
+                time.sleep(5)
+                data['played_time'] = duration - 1
+                data['play_type'] = 0
+                data['start_ts'] = int(time.time())
+                response = self.post(url, data=data, headers=headers)
+                if response and response.get("code") == 0:
+                    self.log(f"av{aid}观看成功")
+                    return True
+        self.log(f"av{aid}观看失败 {response}")
+        return False
     
     # 好评
     def like(self, aid):
@@ -1059,7 +1085,7 @@ def main():
                     LiveToolCurrentCommit = f.read()
             except:
                 LiveToolCurrentCommit = None
-            liveToolLatestCommit = LiveToolCurrentCommit if LiveToolCurrentCommit else "77c4c85"
+            liveToolLatestCommit = LiveToolCurrentCommit if LiveToolCurrentCommit else "058fac1"
             if config['liveTool']['autoUpdate']:
                 try:
                     liveToolLatestCommit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()['tag_name']

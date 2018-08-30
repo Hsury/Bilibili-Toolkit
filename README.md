@@ -5,7 +5,7 @@
 <h1 align="center">Bilibili-Toolkit</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.8.28-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.8.30-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -19,7 +19,7 @@
 |query               |2018/8/28      |获取用户信息                  |
 |setPrivacy          |2018/7/24      |修改隐私设置                  |
 |silver2Coins        |2018/8/8       |银瓜子兑换硬币                |
-|watch               |2018/6/20      |观看                          |
+|watch               |2018/8/30      |观看                          |
 |like                |2018/7/8       |好评                          |
 |reward              |2018/6/20      |投币                          |
 |favour              |2018/6/20      |收藏                          |
@@ -35,7 +35,7 @@
 |mallLottery         |2018/6/23      |会员购周年庆活动抽奖          |
 |mallPrize           |2018/6/23      |会员购周年庆活动中奖查询      |
 |mi6XLottery         |2018/6/30      |小米6X抢F码活动抽奖           |
-|liveTool            |2018/8/25      |直播助手                      |
+|liveTool            |2018/8/30      |直播助手                      |
 
 *注：liveTool直播助手组件编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
 
