@@ -23,7 +23,7 @@ from urllib import parse
 
 class Bilibili():
     appKey = "1d8b6e7d45233436"
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36"
     
     def __init__(self, https=True):
         self.cookie = ""
@@ -47,7 +47,7 @@ class Bilibili():
         self.proxyPool = set()
     
     def log(self, message):
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.uid}] {message}", flush=True)
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.username if self.username else '#' + self.uid if self.uid else ''}] {message}", flush=True)
     
     def get(self, url, headers=None, decodeLevel=2, timeout=15, retry=10):
         for i in range(retry + 1):
@@ -76,9 +76,13 @@ class Bilibili():
             self.proxyPool.update(proxy)
     
     def setProxy(self):
-        proxy = random.sample(self.proxyPool, 1)[0]
-        self.proxy = {self.protocol: f"{self.protocol}://{proxy}"}
-        self.log(f"使用{self.protocol.upper()}代理: {proxy}")
+        if self.proxyPool:
+            proxy = random.sample(self.proxyPool, 1)[0]
+            self.proxy = {self.protocol: f"{self.protocol}://{proxy}"}
+            # self.log(f"使用{self.protocol.upper()}代理: {proxy}")
+            return True
+        else:
+            return False
     
     def getSign(self, param):
         salt = "560c52ccd288fed045859ed18bffd973"
@@ -88,7 +92,15 @@ class Bilibili():
     
     def importCredential(self, pairs):
         for key, value in pairs.items():
-            if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
+            if key == "username":
+                self.username = value
+            elif key == "password":
+                self.password = value
+            elif key == "accessToken":
+                self.accessToken = value
+            elif key == "refreshToken":
+                self.refreshToken = value
+            elif key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
                 if key == "bili_jct":
                     self.csrf = value
                 elif key == "DedeUserID":
@@ -96,14 +108,6 @@ class Bilibili():
                 elif key == "sid":
                     self.sid = value
                 self.cookie = f"{self.cookie}{key}={value};"
-            elif key == "accessToken":
-                self.accessToken = value
-            elif key == "refreshToken":
-                self.refreshToken = value
-            elif key == "username":
-                self.username = value
-            elif key == "password":
-                self.password = value
     
     # 登录
     def login(self):
@@ -136,7 +140,6 @@ class Bilibili():
                     self.importCredential(session.cookies.get_dict())
                 return True
             else:
-                self.log(f"Token已失效")
                 url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/refresh_token"
                 param = f"access_key={self.accessToken}&appkey={Bilibili.appKey}&refresh_token={self.refreshToken}&ts={int(time.time())}"
                 data = f"{param}&sign={self.getSign(param)}"
@@ -158,24 +161,28 @@ class Bilibili():
             return False
         
         def byPassword():
-            url = f"{self.protocol}://passport.bilibili.com/api/oauth2/getKey"
-            data = {'appkey': Bilibili.appKey,
-                    'sign': self.getSign(f"appkey={Bilibili.appKey}")}
-            response = self.post(url, data=data)
-            if response and response.get("code") == 0:
-                keyHash = response['data']['hash']
-                pubKey = rsa.PublicKey.load_pkcs1_openssl_pem(response['data']['key'].encode())
-            else:
-                self.log(f"Key获取失败 {response}")
-                return False
+            def getKey():
+                url = f"{self.protocol}://passport.bilibili.com/api/oauth2/getKey"
+                data = {'appkey': Bilibili.appKey,
+                        'sign': self.getSign(f"appkey={Bilibili.appKey}")}
+                while True:
+                    response = self.post(url, data=data)
+                    if response and response.get("code") == 0:
+                        return {'keyHash': response['data']['hash'],
+                                'pubKey': rsa.PublicKey.load_pkcs1_openssl_pem(response['data']['key'].encode())}
+                    else:
+                        time.sleep(1)
+            
             while True:
+                key = getKey()
+                keyHash, pubKey = key['keyHash'], key['pubKey']
                 url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
                 param = f"appkey={Bilibili.appKey}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
                 data = f"{param}&sign={self.getSign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
                 response = self.post(url, data=data, headers=headers)
-                if response:
-                    while True:
+                while True:
+                    if response:
                         if response['code'] == -105:
                             sid = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
                             url = f"{self.protocol}://passport.bilibili.com/captcha"
@@ -183,12 +190,14 @@ class Bilibili():
                                        'Host': "passport.bilibili.com",
                                        'User-Agent': Bilibili.ua}
                             response = self.get(url, headers=headers, decodeLevel=1)
-                            url = "http://47.95.255.188:5000/code"
-                            data = {'image': base64.b64encode(response)}
-                            response = self.post(url, data=data, decodeLevel=1, timeout=15)
+                            url = "http://132.232.138.236:2233/captcha"
+                            data = base64.b64encode(response)
+                            response = self.post(url, data=data, decodeLevel=1)
                             captcha = response.decode() if response and len(response) == 5 else None
                             if captcha:
                                 self.log(f"验证码识别结果: {captcha}")
+                                key = getKey()
+                                keyHash, pubKey = key['keyHash'], key['pubKey']
                                 url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
                                 param = f"appkey={Bilibili.appKey}&captcha={captcha}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{keyHash}{self.password}'.encode(), pubKey)))}&username={parse.quote_plus(self.username)}"
                                 data = f"{param}&sign={self.getSign(param)}"
@@ -196,11 +205,11 @@ class Bilibili():
                                            'Cookie': f"sid={sid}"}
                                 response = self.post(url, data=data, headers=headers)
                             else:
-                                self.log(f"验证码识别服务暂时不可用, {'尝试更换代理' if self.proxy else '30秒后重试'}")
+                                self.log(f"验证码识别服务暂时不可用, {'尝试更换代理' if self.proxy else '5秒后重试'}")
                                 if self.proxy:
                                     self.setProxy()
                                 else:
-                                    time.sleep(30)
+                                    time.sleep(5)
                                 break
                         elif response['code'] == 0 and response['data']['status'] == 0:
                             self.cookie = "".join(f"{i['name']}={i['value']};" for i in response['data']['cookie_info']['cookies'])
@@ -209,17 +218,18 @@ class Bilibili():
                             self.sid = response['data']['cookie_info']['cookies'][3]['value']
                             self.accessToken = response['data']['token_info']['access_token']
                             self.refreshToken = response['data']['token_info']['refresh_token']
-                            self.log(f"{self.username}登录成功")
+                            self.log("登录成功")
                             return True
                         else:
-                            self.log(f"{self.username}登录失败 {response}")
+                            self.log(f"登录失败 {response}")
                             return False
-                else:
-                    self.log(f"当前IP登录过于频繁, {'尝试更换代理' if self.proxy else '30秒后重试'}")
-                    if self.proxy:
-                        self.setProxy()
                     else:
-                        time.sleep(30)
+                        self.log(f"当前IP登录过于频繁, {'尝试更换代理' if self.proxy else '30秒后重试'}")
+                        if self.proxy:
+                            self.setProxy()
+                        else:
+                            time.sleep(30)
+                        break
         
         if self.cookie and byCookie():
             return True
@@ -247,7 +257,7 @@ class Bilibili():
             self.info['join'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(response['data']['jointime']))
             self.info['level'] = response['data']['level']
             self.info['nickname'] = response['data']['name']
-            self.log(f"{self.info['nickname']}, Lv.{self.info['level']}({self.info['experience']['current']}/{self.info['experience']['next']}), 拥有{self.info['coins']}枚硬币, 注册于{self.info['join']}, 账号{'状态正常' if not self.info['ban'] else '被封禁'}")
+            self.log(f"{self.info['nickname']}(UID={self.uid}), Lv.{self.info['level']}({self.info['experience']['current']}/{self.info['experience']['next']}), 拥有{self.info['coins']}枚硬币, 注册于{self.info['join']}, 账号{'状态正常' if not self.info['ban'] else '被封禁'}")
             return True
         else:
             self.log("用户信息获取失败")
@@ -718,11 +728,16 @@ class Bilibili():
             if platform.system() == "Windows":
                 options.binary_location = "chrome-win32\\chrome.exe"
             driver = webdriver.Chrome(executable_path="chromedriver.exe" if platform.system() == "Windows" else "chromedriver", chrome_options=options)
-            driver.get(f"https://mall.bilibili.com/detail.html?itemsId={itemID}")
+            driver.get(f"{self.protocol}://mall.bilibili.com/detail.html?itemsId={itemID}")
             for cookie in self.cookie.strip(";").split(";"):
                 name, value = cookie.split("=")
                 driver.add_cookie({'domain': ".bilibili.com", 'name': name, 'value': value})
             self.log(f"(线程{threadID})商品{itemID}开始监视库存")
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/items/info?itemsId={itemID}"
+            while True:
+                response = self.get(url)
+                if response and response.get("code") == 0 and response['data']['status'] not in [13, 14] and response['data']['activityInfoVO']['serverTime'] >= response['data']['activityInfoVO']['startTime'] if response['data']['activityInfoVO'] else True:
+                    break
             timestamp = time.time()
             inStock = False
             while True:
@@ -749,7 +764,7 @@ class Bilibili():
                         return True
                     if time.time() - timestamp > timeout:
                         self.log(f"(线程{threadID})商品{itemID}操作超时, 当前页面为{driver.current_url}")
-                        driver.get(f"https://mall.bilibili.com/detail.html?itemsId={itemID}")
+                        driver.get(f"{self.protocol}://mall.bilibili.com/detail.html?itemsId={itemID}")
                         timestamp = time.time()
                 except:
                     pass
@@ -762,100 +777,80 @@ class Bilibili():
         for thread in threads:
             thread.join()
     
-    # 会员购周年庆活动助力
-    def mallAssist(self, mid):
-        # mid = 被助力用户UID
-        if not (self.info['nickname'] and self.info['face']):
-            self.query()
-        url = f"{self.protocol}://space.bilibili.com/ajax/member/GetInfo"
-        data = f"mid={mid}&csrf="
-        headers = {'Content-Type': "application/x-www-form-urlencoded",
-                   'Host': "space.bilibili.com",
-                   'Origin': "https://space.bilibili.com",
-                   'Referer': f"https://space.bilibili.com/{mid}/",
-                   'User-Agent': Bilibili.ua}
-        response = self.post(url, data=data, headers=headers)
-        beAssistedUserPortrait = response['data']['face']
-        beAssistedUserUname = response['data']['name']
-        url = "https://mall.bilibili.com/mall-c/activity_626/buddy_assist_record/buddy_assist"
-        data = {'assistUserPortrait': self.info['face'],
-                'assistUserUname': self.info['nickname'],
-                'beAssistedMid': mid,
-                'beAssistedUserPortrait': beAssistedUserPortrait,
-                'beAssistedUserUname': beAssistedUserUname}
-        headers = {'Content-Type': "application/json",
-                   'Cookie': self.cookie,
+    # 会员购周年庆活动签到
+    def mallSign(self):
+        url = f"{self.protocol}://mall.bilibili.com/activity/game/sign?gameId=3"
+        headers = {'Cookie': self.cookie,
                    'Host': "mall.bilibili.com",
                    'Origin': "https://www.bilibili.com",
-                   'Referer': f"https://www.bilibili.com/blackboard/mall/activity-B1oZiV-Z7.html?uid={mid}",
+                   'Referer': "https://www.bilibili.com/blackboard/mall/activity-fySleoNP-.html",
                    'User-Agent': Bilibili.ua}
-        response = self.post(url, data=json.dumps(data), headers=headers)
+        response = self.get(url, headers=headers)
         if response and response.get("code") == 0:
-            self.log(f"{beAssistedUserUname}({mid})会员购周年庆活动助力成功")
+            self.log("会员购周年庆活动签到成功")
             return True
         else:
-            self.log(f"{beAssistedUserUname}({mid})会员购周年庆活动助力失败 {response}")
+            self.log(f"会员购周年庆活动签到失败 {response}")
             return False
     
-    # 会员购周年庆活动抽奖
+    # 会员购周年庆活动扭蛋
     def mallLottery(self):
-        jackpots = {'钻石宝库': 14,
-                    '黄金宝库': 15,
-                    '白银宝库': 16}
+        jackpots = {'A档': 4,
+                    'B档': 5}
         if not (self.info['nickname'] and self.info['face']):
             self.query()
-        url = "https://mall.bilibili.com/mall-c/activity_626/lucky_draw"
-        data = {'jackpotId': jackpots['钻石宝库'],
+        url = f"{self.protocol}://mall.bilibili.com/activity/luckydraw"
+        data = {'gameId': 3,
+                'jackpotId': jackpots['A档'],
+                'mid': self.uid,
                 'portrait': self.info['face'],
                 'uname': self.info['nickname']}
         headers = {'Content-Type': "application/json",
                    'Cookie': self.cookie,
                    'Host': "mall.bilibili.com",
                    'Origin': "https://www.bilibili.com",
-                   'Referer': "https://www.bilibili.com/blackboard/mall/activity-B1oZiV-Z7.html",
+                   'Referer': "https://www.bilibili.com/blackboard/mall/activity-fySleoNP-.html",
                    'User-Agent': Bilibili.ua}
         while True:
             response = self.post(url, data=json.dumps(data), headers=headers)
             if response and response.get("code") is not None:
                 if response['code'] == 0:
-                    self.log(f"从{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == response['data']['jackpotId']), '未知宝库')}中抽到了{response['data']['prizeName']}, 还剩余{response['data']['remainPopularValue']}把钥匙")
+                    self.log(f"从{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == response['data']['jackpotId']), '未知档')}中扭到了{response['data']['prizeName']}, 还剩余{response['data']['remainPopularValue']}枚扭蛋币")
                 elif response['code'] == 83110025:
-                    self.log(f"奖池(ID={data['jackpotId']})不存在, 停止碰撞新奖池ID")
+                    self.log(f"扭蛋档(ID={data['jackpotId']})不存在, 停止碰撞新扭蛋档ID")
                     break
                 elif response['code'] == 83110026:
-                    self.log(f"奖池(ID={data['jackpotId']})已失效, 尝试碰撞新奖池ID")
+                    self.log(f"扭蛋档(ID={data['jackpotId']})已失效, 尝试碰撞新扭蛋档ID")
                     jackpots = {jackpotName: jackpots[jackpotName] + len(jackpots) for jackpotName in jackpots}
                     data['jackpotId'] += len(jackpots)
                 elif response['code'] == 83110027:
-                    self.log(f"钥匙数量已不足以打开{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == data['jackpotId']), '未知宝库')}")
+                    self.log(f"扭蛋币数量已不足以扭{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == data['jackpotId']), '未知档')}扭蛋")
                     if data['jackpotId'] in jackpots.values() and list(jackpots.values()).index(data['jackpotId']) < len(jackpots) - 1:
                         data['jackpotId'] = list(jackpots.values())[list(jackpots.values()).index(data['jackpotId']) + 1]
                     else:
                         break
                 elif response['code'] == 83110029:
-                    self.log(f"{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == data['jackpotId']), '未知宝库')}中已经没有奖品了")
+                    self.log(f"{next((jackpotName for jackpotName, jackpotID in jackpots.items() if jackpotID == data['jackpotId']), '未知档')}中已经没有扭蛋了")
                     if data['jackpotId'] in jackpots.values() and list(jackpots.values()).index(data['jackpotId']) < len(jackpots) - 1:
                         data['jackpotId'] = list(jackpots.values())[list(jackpots.values()).index(data['jackpotId']) + 1]
                     else:
                         break
                 else:
-                    self.log(f"会员购周年庆活动抽奖失败 {response}")
+                    self.log(f"会员购周年庆活动扭蛋失败 {response}")
             time.sleep(2)
     
     # 会员购周年庆活动中奖查询
     def mallPrize(self):
-        url = "https://mall.bilibili.com/mall-c/activity_626/lucky_draw_record/my_lcuky_draw_list"
-        data = {'mid': self.uid}
-        headers = {'Content-Type': "application/json",
-                   'Cookie': self.cookie,
+        url = f"{self.protocol}://mall.bilibili.com/activity/lucky_draw_record/my_lucky_draw_list?gameId=3"
+        headers = {'Cookie': self.cookie,
                    'Host': "mall.bilibili.com",
                    'Origin': "https://www.bilibili.com",
-                   'Referer': "https://www.bilibili.com/blackboard/mall/activity-B1oZiV-Z7.html",
+                   'Referer': "https://www.bilibili.com/blackboard/mall/activity-fySleoNP-.html",
                    'User-Agent': Bilibili.ua}
-        response = self.post(url, data=json.dumps(data), headers=headers)
+        response = self.get(url, headers=headers)
         if response and response.get("code") == 0:
             self.log("会员购周年庆活动中奖查询成功")
-            prizeNames = sorted([prize['prizeName'] for prize in response['data']])
+            prizeNames = sorted([prize['prizeName'] for prize in response['data']['luckyDrawRecordDTOS']])
             prizes = {}
             for prizeName in prizeNames:
                 prizes[prizeName] = prizes[prizeName] + 1 if prizeName in prizes else 1
@@ -866,58 +861,6 @@ class Bilibili():
         else:
             self.log(f"会员购周年庆活动中奖查询失败 {response}")
             return False
-    
-    # 小米6X抢F码活动抽奖
-    def mi6XLottery(self):
-        url = f"{self.protocol}://www.bilibili.com/matsuri/get/act/mylotterytimes?act_id=159"
-        headers = {'Cookie': self.cookie,
-                   'Host': "www.bilibili.com",
-                   'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
-                   'User-Agent': Bilibili.ua}
-        response = self.get(url, headers=headers)
-        attempts = 0
-        while True:
-            url = f"{self.protocol}://www.bilibili.com/matsuri/index?act_id=159"
-            headers = {'Cookie': self.cookie,
-                       'Host': "www.bilibili.com",
-                       'Origin': "https://www.bilibili.com",
-                       'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
-                       'User-Agent': Bilibili.ua}
-            response = self.post(url, headers=headers)
-            if response and response.get("code") is not None:
-                if response['code'] == -30001:
-                    self.log("活动已结束")
-                    break
-                elif response['code'] == -30010:
-                    attempts += 1
-                    self.log(f"第{attempts}次抽奖, 未中奖")
-                elif response['code'] == -30011:
-                    url = f"{self.protocol}://www.bilibili.com/matsuri/add/lottery/times?act_id=159"
-                    headers = {'Cookie': self.cookie,
-                               'Host': "www.bilibili.com",
-                               'Referer': "https://www.bilibili.com/blackboard/activity-mixchuyin.html",
-                               'User-Agent': Bilibili.ua}
-                    response = self.get(url, headers=headers)
-                    if response and response.get("code") is not None:
-                        if response['code'] == 0:
-                            self.log("获取额外5次F码抽奖机会成功")
-                        elif response['code'] == -30030:
-                            self.log("今日抽奖机会已用完, 停止抽奖")
-                            break
-                        else:
-                            self.log(f"获取额外5次F码抽奖机会失败 {response}")
-                    continue
-                elif response['code'] == -30019:
-                    self.log(f"当前IP被封禁1小时, {'尝试更换代理' if self.proxy else '停止抽奖'}")
-                    if self.proxy:
-                        self.setProxy()
-                        continue
-                    else:
-                        break
-                else:
-                    attempts += 1
-                    self.log(f"第{attempts}次抽奖, 疑似中奖 {response}")
-            time.sleep(1)
 
 def download(url, saveAs=None):
     print(f"正在下载{url}", flush=True)
@@ -948,9 +891,16 @@ def decompress(file, remove=True):
 def wrapper(arg):
     addInterval = lambda func, delay: time.sleep(delay)
     config, account = arg['config'], arg['account']
-    instance = Bilibili(config['proxy']['https'])
+    instance = Bilibili(config['global']['https'])
     if config['proxy']['enable']:
-        instance.addProxy(config['proxy']['pool'])
+        if isinstance(config['proxy']['pool'], str):
+            try:
+                with open(config['proxy']['pool'], "r") as f:
+                    instance.addProxy([proxy for proxy in f.read().strip().split("\n") if proxy])
+            except:
+                pass
+        elif isinstance(config['proxy']['pool'], list):
+            instance.addProxy(config['proxy']['pool'])
         instance.setProxy()
     instance.importCredential(account)
     if instance.login():
@@ -988,29 +938,26 @@ def wrapper(arg):
         if config['mallRush']['enable']:
             for item in zip(config['mallRush']['itemID'], config['mallRush']['thread']):
                 threads.append(threading.Thread(target=instance.mallRush, args=(item[0], item[1], config['mallRush']['headless'], config['mallRush']['timeout'])))
-        if config['mallAssist']['enable']:
-            for mid in config['mallAssist']['mid']:
-                threads.append(threading.Thread(target=instance.mallAssist, args=(mid,)))
+        if config['mallSign']['enable']:
+            threads.append(threading.Thread(target=instance.mallSign))
         if config['mallLottery']['enable']:
             threads.append(threading.Thread(target=instance.mallLottery))
         if config['mallPrize']['enable']:
             threads.append(threading.Thread(target=instance.mallPrize))
-        if config['mi6XLottery']['enable']:
-            threads.append(threading.Thread(target=instance.mi6XLottery))
-        instance.log("任务开始执行")
+        # instance.log("任务开始执行")
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
-        instance.log("任务执行完毕")
-    return {'cookie': instance.cookie,
+        # instance.log("任务执行完毕")
+    return {'username': instance.username,
+            'password': instance.password,
             'accessToken': instance.accessToken,
             'refreshToken': instance.refreshToken,
-            'username': instance.username,
-            'password': instance.password}
+            'cookie': instance.cookie}
 
 def main():
-    configFile = sys.argv[1] if len(sys.argv) > 1 else "bilibili.toml"
+    configFile = sys.argv[1] if len(sys.argv) > 1 else "config.toml"
     try:
         config = toml.load(configFile)
     except:
@@ -1026,10 +973,10 @@ def main():
                 if len(pair.split("=")) == 2:
                     key, value = pair.split("=")
                     pairs[key] = value
-            cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
-            token = True if all(key in pairs for key in ["accessToken", "refreshToken"]) else False
             password = True if all(key in pairs for key in ["username", "password"]) else False
-            if cookie or token or password:
+            token = True if all(key in pairs for key in ["accessToken", "refreshToken"]) else False
+            cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
+            if password or token or cookie:
                 accounts.append(pairs)
         except:
             pass
@@ -1053,9 +1000,9 @@ def main():
                 os.system(f"{prefix}yum -y install chromedriver")
         elif platform.system() == "Windows":
             if not os.path.exists("chrome-win32\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/583214/chrome-win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/590951/chrome-win32.zip"))
             if not os.path.exists("chromedriver.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.41/chromedriver_win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.42/chromedriver_win32.zip"))
         else:
             print("会员购抢购组件不支持在当前平台上运行", flush=True)
             config['mallRush']['enable'] = False
@@ -1132,7 +1079,7 @@ def main():
             except:
                 print("直播助手组件启动失败", flush=True)
     try:
-        with Pool(min(config['user']['process'], len(accounts))) as p:
+        with Pool(min(config['global']['process'], len(accounts))) as p:
             result = p.map(wrapper, [{'config': config,
                                       'account': account} for account in accounts])
             p.close()

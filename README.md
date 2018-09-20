@@ -1,13 +1,11 @@
-<p align="center">
-<img src="http://dl.kagamiz.com/Bilibili.png" alt="Bilibili" width="300px">
-</p>
+<center>
+<img src="https://cdn.kagamiz.com/Bilibili-Toolkit/bilibili.png" width="300">
 
-<h1 align="center">Bilibili-Toolkit</h1>
+# - Bilibili Toolkit -
 
-<p align="center">
-<img src="https://img.shields.io/badge/version-2018.8.30-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.9.20-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
-</p>
+</center>
 
 > 🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作
 
@@ -15,7 +13,7 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/8/27      |登录                          |
+|login               |2018/9/19      |登录                          |
 |query               |2018/8/28      |获取用户信息                  |
 |setPrivacy          |2018/7/24      |修改隐私设置                  |
 |silver2Coins        |2018/8/8       |银瓜子兑换硬币                |
@@ -30,29 +28,28 @@
 |commentPost         |2018/8/26      |评论发表                      |
 |dynamicLike         |2018/6/29      |动态点赞                      |
 |dynamicRepost       |2018/6/29      |动态转发                      |
-|mallRush            |2018/7/19      |会员购抢购                    |
-|mallAssist          |2018/6/22      |会员购周年庆活动助力          |
-|mallLottery         |2018/6/23      |会员购周年庆活动抽奖          |
-|mallPrize           |2018/6/23      |会员购周年庆活动中奖查询      |
-|mi6XLottery         |2018/6/30      |小米6X抢F码活动抽奖           |
+|mallRush            |2018/9/19      |会员购抢购                    |
+|mallSign            |2018/9/19      |会员购周年庆活动签到          |
+|mallLottery         |2018/9/20      |会员购周年庆活动扭蛋          |
+|mallPrize           |2018/9/19      |会员购周年庆活动中奖查询      |
 |liveTool            |2018/8/30      |直播助手                      |
 
-*注：liveTool直播助手组件编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
+*注：[liveTool直播助手组件](https://github.com/Hsury/Bilibili-Live-Tool)编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
 
 ## 使用指南
 
 ### 二进制版本
 
-从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件bilibili.toml后运行即可
+从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件config.toml后运行即可
 
 ### 源代码版本
 
-1. 下载（克隆）本代码仓库，并修改默认配置文件bilibili.toml
+1. 下载（克隆）本代码仓库，并修改默认配置文件config.toml
 
 ```
 $ git clone https://github.com/Hsury/Bilibili-Toolkit.git
 $ cd Bilibili-Toolkit
-$ nano bilibili.toml
+$ nano config.toml
 ```
 
 2. 使用pip安装所需依赖
@@ -66,6 +63,16 @@ $ python3.6 -m pip install requests rsa selenium toml
 ```
 $ python3.6 bilibili.py
 ```
+
+## 捐赠
+
+若本项目对您有所帮助，欢迎请我喝杯妹汁 (=・ω・=)
+
+<center>
+<img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay.png" width="250">
+<img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_wechat.png" width="250">
+<img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay_redpacket.png" width="250">
+</center>
 
 ## 鸣谢
 
