@@ -1,11 +1,13 @@
-<center>
+<p align="center">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/bilibili.png" width="300">
+</p>
 
-# - Bilibili Toolkit -
+<h1 align="center">- Bilibili Toolkit -</h1>
 
+<p align="center">
 <img src="https://img.shields.io/badge/version-2018.9.20-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
-</center>
+</p>
 
 > 🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作
 
@@ -68,11 +70,11 @@ $ python3.6 bilibili.py
 
 若本项目对您有所帮助，欢迎请我喝杯妹汁 (=・ω・=)
 
-<center>
+<p align="center">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay.png" width="250">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_wechat.png" width="250">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay_redpacket.png" width="250">
-</center>
+</p>
 
 ## 鸣谢
 

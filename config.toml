@@ -12,13 +12,13 @@ pool = "proxy.txt" # 代理池
 [user]
 update = true # 自动更新凭据
 account = """
-# 请在这个区域填写您的账号凭据, 每一条凭据应至少包含下述三种身份校验方式之一的完整键值对.
-#     Cookie: bili_jct=...;DedeUserID=...;DedeUserID__ckMd5=...;sid=...;SESSDATA=...;
-#      Token: accessToken=...;refreshToken=...;
-#   Password: username=...;password=...;
 username=22娘;password=GodKnows;
 username=33娘;password=GodKnows;
 """
+# 请在上方填写您的账号凭据, 每一条凭据应至少包含下述三种身份校验方式之一的完整键值对:
+# Password: username=...;password=...;
+# Token: accessToken=...;refreshToken=...;
+# Cookie: bili_jct=...;DedeUserID=...;DedeUserID__ckMd5=...;sid=...;SESSDATA=...;
 
 # 获取用户信息
 [query]
