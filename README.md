@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.9.20-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.9.21-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -32,7 +32,7 @@
 |dynamicRepost       |2018/6/29      |动态转发                      |
 |mallRush            |2018/9/19      |会员购抢购                    |
 |mallSign            |2018/9/19      |会员购周年庆活动签到          |
-|mallLottery         |2018/9/20      |会员购周年庆活动扭蛋          |
+|mallLottery         |2018/9/21      |会员购周年庆活动扭蛋          |
 |mallPrize           |2018/9/19      |会员购周年庆活动中奖查询      |
 |liveTool            |2018/8/30      |直播助手                      |
 
@@ -40,11 +40,7 @@
 
 ## 使用指南
 
-### 二进制版本
-
-从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件config.toml后运行即可
-
-### 源代码版本
+### 源代码版本（推荐）
 
 1. 下载（克隆）本代码仓库，并修改默认配置文件config.toml
 
@@ -66,9 +62,24 @@ $ python3.6 -m pip install requests rsa selenium toml
 $ python3.6 bilibili.py
 ```
 
+### 二进制版本
+
+从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件config.toml后运行即可
+
+## 登录验证码识别API
+
+使用CNN卷积神经网络构建，识别准确率达到98.6%
+
+```
+url = "http://132.232.138.236:2233/captcha"
+payload = base64.b64encode(image)
+response = requests.post(url, data=payload)
+captcha = response.text
+```
+
 ## 捐赠
 
-若本项目对您有所帮助，欢迎请我喝杯妹汁 (=・ω・=)
+若本项目对您有所帮助，欢迎请我喝杯~~妹汁~~ (=・ω・=)
 
 <p align="center">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay.png" width="250">
@@ -80,9 +91,9 @@ $ python3.6 bilibili.py
 
 本项目的灵感与使用到的部分API来自以下项目：
 
-> [BiliHelper](https://github.com/lkeme/BiliHelper)
+> [czp3009/bilibili-api](https://github.com/czp3009/bilibili-api)
 
-> [bilibili-live-tools](https://github.com/yjqiang/bilibili-live-tools)
+> [yjqiang/bilibili-live-tools](https://github.com/yjqiang/bilibili-live-tools)
 
 ## 许可证
 

@@ -795,8 +795,8 @@ class Bilibili():
     
     # 会员购周年庆活动扭蛋
     def mallLottery(self):
-        jackpots = {'A档': 4,
-                    'B档': 5}
+        jackpots = {'A档': 6,
+                    'B档': 7}
         if not (self.info['nickname'] and self.info['face']):
             self.query()
         url = f"{self.protocol}://mall.bilibili.com/activity/luckydraw"
