@@ -3,13 +3,12 @@
 </p>
 
 <h1 align="center">- Bilibili Toolkit -</h1>
+<h4 align="center">🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作</h4>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.9.21-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.9.23-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
-
-> 🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作
 
 ## 功能
 
@@ -32,7 +31,7 @@
 |dynamicRepost       |2018/6/29      |动态转发                      |
 |mallRush            |2018/9/19      |会员购抢购                    |
 |mallSign            |2018/9/19      |会员购周年庆活动签到          |
-|mallLottery         |2018/9/21      |会员购周年庆活动扭蛋          |
+|mallLottery         |2018/9/23      |会员购周年庆活动扭蛋          |
 |mallPrize           |2018/9/19      |会员购周年庆活动中奖查询      |
 |liveTool            |2018/8/30      |直播助手                      |
 
