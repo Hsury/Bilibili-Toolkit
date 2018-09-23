@@ -3,12 +3,13 @@
 </p>
 
 <h1 align="center">- Bilibili Toolkit -</h1>
-<h4 align="center">🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作</h4>
 
 <p align="center">
 <img src="https://img.shields.io/badge/version-2018.9.23-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
+
+<h4 align="center">🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作</h4>
 
 ## 功能
 
@@ -41,7 +42,7 @@
 
 ### 源代码版本（推荐）
 
-1. 下载（克隆）本代码仓库，并修改默认配置文件config.toml
+1. 克隆或[下载](https://github.com/Hsury/Bilibili-Toolkit/archive/master.zip)本代码仓库，并修改默认配置文件config.toml
 
 ```
 $ git clone https://github.com/Hsury/Bilibili-Toolkit.git
@@ -96,12 +97,8 @@ captcha = response.text
 
 ## 许可证
 
-Bilibili-Toolkit is under The Star And Thank Author License (SATA).
+Bilibili Toolkit is under The Star And Thank Author License (SATA)
 
-本项目基于MIT协议发布，并增加了SATA协议。
+本项目基于MIT协议发布，并增加了SATA协议
 
-当你使用了使用SATA的开源软件或文档的时候，在遵守基础许可证的前提下，你必须马不停蹄地给你所使用的开源项目“点赞”，比如在GitHub上Star。
-
-然后你必须感谢这个帮助了你的开源项目的作者，作者信息可以在许可证头部的版权声明部分找到。
-
-本项目的所有代码文件、配置项，除另有说明外，均基于上述介绍的协议发布。
+您有义务为此开源项目点赞，并考虑额外给予作者适当的奖励 ∠( ᐛ 」∠)＿

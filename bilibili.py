@@ -1,6 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
+"""Bilibili Toolkit 哔哩哔哩工具箱
+https://github.com/Hsury/Bilibili-Toolkit"""
+
 import base64
 import hashlib
 import io
@@ -20,6 +23,11 @@ import toml
 from multiprocessing import freeze_support, Pool
 from selenium import webdriver
 from urllib import parse
+
+__author__ = "Hsury"
+__email__ = "i@hsury.com"
+__license__ = "SATA"
+__version__ = "2018.9.23"
 
 class Bilibili():
     appKey = "1d8b6e7d45233436"
