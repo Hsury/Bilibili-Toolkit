@@ -27,7 +27,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.9.23"
+__version__ = "2018.9.24"
 
 class Bilibili():
     appKey = "1d8b6e7d45233436"
@@ -744,7 +744,7 @@ class Bilibili():
             url = f"{self.protocol}://mall.bilibili.com/mall-c/items/info?itemsId={itemID}"
             while True:
                 response = self.get(url)
-                if response and response.get("code") == 0 and response['data']['status'] not in [13, 14] and response['data']['activityInfoVO']['serverTime'] >= response['data']['activityInfoVO']['startTime'] if response['data']['activityInfoVO'] else True:
+                if response and response.get("code") == 0 and response['data']['activityInfoVO']['serverTime'] >= response['data']['activityInfoVO']['startTime'] if response['data']['activityInfoVO'] else True:
                     break
             timestamp = time.time()
             inStock = False
@@ -803,8 +803,8 @@ class Bilibili():
     
     # 会员购周年庆活动扭蛋
     def mallLottery(self):
-        jackpots = {'A档': 10,
-                    'B档': 11}
+        jackpots = {'A档': 12,
+                    'B档': 13}
         if not (self.info['nickname'] and self.info['face']):
             self.query()
         url = f"{self.protocol}://mall.bilibili.com/activity/luckydraw"
@@ -1078,6 +1078,7 @@ def main():
             liveToolConfig['task_control']['fetchrule'] = "uper" if config['liveTool']['dailyGiveCoins']['specialUp'] else "bilitop"
             liveToolConfig['task_control']['mid'] = config['liveTool']['dailyGiveCoins']['specialUp']
             liveToolConfig['other_control']['default_monitor_roomid'] = config['liveTool']['monitorRoom']
+            liveToolConfig['other_control']['raffle_minitor_roomid'] = 0
             with open(os.path.join(liveToolCwd, "config", "user.toml"), "w") as f:
                 toml.dump(liveToolConfig, f)
             with open(os.path.join(liveToolCwd, "config", "ips.toml"), "w") as f:

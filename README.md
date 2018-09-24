@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.9.23-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.9.24-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -30,9 +30,9 @@
 |commentPost         |2018/8/26      |评论发表                      |
 |dynamicLike         |2018/6/29      |动态点赞                      |
 |dynamicRepost       |2018/6/29      |动态转发                      |
-|mallRush            |2018/9/19      |会员购抢购                    |
+|mallRush            |2018/9/24      |会员购抢购                    |
 |mallSign            |2018/9/19      |会员购周年庆活动签到          |
-|mallLottery         |2018/9/23      |会员购周年庆活动扭蛋          |
+|mallLottery         |2018/9/24      |会员购周年庆活动扭蛋          |
 |mallPrize           |2018/9/19      |会员购周年庆活动中奖查询      |
 |liveTool            |2018/8/30      |直播助手                      |
 
