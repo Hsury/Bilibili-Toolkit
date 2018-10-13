@@ -27,7 +27,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.9.24"
+__version__ = "2018.10.13"
 
 class Bilibili():
     appKey = "1d8b6e7d45233436"
@@ -684,15 +684,31 @@ class Bilibili():
             return False
     
     # 动态转发
-    def dynamicRepost(self, did, message):
+    def dynamicRepost(self, did, message="转发动态", ats=[]):
         # did = 动态ID
         # message = 转发内容
+        # ats = 被@用户UID列表
+        def uid2Nickname(mid):
+            url = f"{self.protocol}://api.bilibili.com/x/web-interface/card?mid={mid}"
+            response = self.get(url)
+            if response and response.get("code") == 0:
+                return response['data']['card']['name']
+            else:
+                return ""
+        
         url = f"{self.protocol}://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost"
+        ctrl = []
+        for at in zip(ats, [uid2Nickname(mid) for mid in ats]):
+            ctrl.append({'data': str(at[0]),
+                         'location': len(message) + 1,
+                         'length': len(at[1]) + 1,
+                         'type': 1})
+            message = f"{message} @{at[1]}"
         data = {'uid': self.uid,
                 'dynamic_id': did,
                 'content': message,
-                'at_uids': None,
-                'ctrl': "[]",
+                'at_uids': ",".join([str(at) for at in ats]),
+                'ctrl': json.dumps(ctrl),
                 'csrf_token': self.csrf}
         headers = {'Content-Type': "application/x-www-form-urlencoded",
                    'Cookie': self.cookie,
@@ -702,7 +718,7 @@ class Bilibili():
                    'User-Agent': Bilibili.ua}
         response = self.post(url, data=data, headers=headers)
         if response and response.get("code") == 0:
-            self.log(f"动态{did}转发成功")
+            self.log(f"动态{did}转发成功, 新动态ID为{response['data']['dynamic_id']}")
             return True
         else:
             self.log(f"动态{did}转发失败 {response}")
@@ -942,7 +958,7 @@ def wrapper(arg):
         if config['dynamicLike']['enable']:
             threads.append(threading.Thread(target=lambda: [addInterval(instance.dynamicLike(did), 1) for did in config['dynamicLike']['did']]))
         if config['dynamicRepost']['enable']:
-            threads.append(threading.Thread(target=lambda: [addInterval(instance.dynamicRepost(did, message), 1) for did, message in zip(config['dynamicRepost']['did'], config['dynamicRepost']['message'])]))
+            threads.append(threading.Thread(target=lambda: [addInterval(instance.dynamicRepost(did, message, ats), 1) for did, message, ats in zip(config['dynamicRepost']['did'], config['dynamicRepost']['message'], config['dynamicRepost']['ats'])]))
         if config['mallRush']['enable']:
             for item in zip(config['mallRush']['itemID'], config['mallRush']['thread']):
                 threads.append(threading.Thread(target=instance.mallRush, args=(item[0], item[1], config['mallRush']['headless'], config['mallRush']['timeout'])))
@@ -1081,8 +1097,6 @@ def main():
             liveToolConfig['other_control']['raffle_minitor_roomid'] = 0
             with open(os.path.join(liveToolCwd, "config", "user.toml"), "w") as f:
                 toml.dump(liveToolConfig, f)
-            with open(os.path.join(liveToolCwd, "config", "ips.toml"), "w") as f:
-                toml.dump({'list_ips': config['proxy']['pool']}, f)
             try:
                 liveToolProcess = subprocess.Popen([liveToolExec], cwd=liveToolCwd)
             except:
