@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.10.13-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.11.22-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -17,24 +17,24 @@
 |--------------------|---------------|------------------------------|
 |login               |2018/9/19      |登录                          |
 |query               |2018/8/28      |获取用户信息                  |
-|setPrivacy          |2018/7/24      |修改隐私设置                  |
-|silver2Coins        |2018/8/8       |银瓜子兑换硬币                |
+|set_privacy         |2018/7/24      |修改隐私设置                  |
+|silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |
 |watch               |2018/8/30      |观看                          |
 |like                |2018/7/8       |好评                          |
 |reward              |2018/6/20      |投币                          |
 |favour              |2018/6/20      |收藏                          |
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
-|danmakuPost         |2018/8/28      |弹幕发送                      |
-|commentLike         |2018/6/27      |评论点赞                      |
-|commentPost         |2018/8/26      |评论发表                      |
-|dynamicLike         |2018/6/29      |动态点赞                      |
-|dynamicRepost       |2018/10/13     |动态转发                      |
-|mallRush            |2018/9/24      |会员购抢购                    |
-|mallSign            |2018/9/19      |会员购周年庆活动签到          |
-|mallLottery         |2018/9/24      |会员购周年庆活动扭蛋          |
-|mallPrize           |2018/9/19      |会员购周年庆活动中奖查询      |
-|liveTool            |2018/8/30      |直播助手                      |
+|danmaku_post        |2018/8/28      |弹幕发送                      |
+|comment_like        |2018/6/27      |评论点赞                      |
+|comment_post        |2018/8/26      |评论发表                      |
+|dynamic_like        |2018/6/29      |动态点赞                      |
+|dynamic_repost      |2018/10/13     |动态转发                      |
+|mall_rush           |2018/9/24      |会员购抢购                    |
+|mall_sign           |2018/9/19      |会员购周年庆活动签到          |
+|mall_lottery        |2018/9/24      |会员购周年庆活动扭蛋          |
+|mall_prize          |2018/9/19      |会员购周年庆活动中奖查询      |
+|live_tool           |2018/8/30      |直播助手                      |
 
 *注：[liveTool直播助手组件](https://github.com/Hsury/Bilibili-Live-Tool)编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
 

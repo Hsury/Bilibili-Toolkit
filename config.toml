@@ -17,7 +17,7 @@ username=33娘;password=GodKnows;
 """
 # 请在上方填写您的账号凭据, 每一条凭据应至少包含下述三种身份校验方式之一的完整键值对:
 # Password: username=...;password=...;
-# Token: accessToken=...;refreshToken=...;
+# Token: access_token=...;refresh_token=...;
 # Cookie: bili_jct=...;DedeUserID=...;DedeUserID__ckMd5=...;sid=...;SESSDATA=...;
 
 # 获取用户信息
@@ -25,17 +25,17 @@ username=33娘;password=GodKnows;
 enable = true # 开关
 
 # 修改隐私设置
-[setPrivacy]
+[set_privacy]
 enable = false # 开关
-showFavourite = false # 展示[我的收藏夹]
-showBangumi = false # 展示[订阅番剧]
-showTag = false # 展示[订阅标签]
-showReward = false # 展示[最近投币的视频]
-showInfo = false # 展示[个人资料]
-showGame = false # 展示[最近玩过的游戏]
+show_favourite = false # 展示[我的收藏夹]
+show_bangumi = false # 展示[订阅番剧]
+show_tag = false # 展示[订阅标签]
+show_reward = false # 展示[最近投币的视频]
+show_info = false # 展示[个人资料]
+show_game = false # 展示[最近玩过的游戏]
 
 # 银瓜子兑换硬币
-[silver2Coins]
+[silver_to_coin]
 enable = true # 开关
 
 # 观看
@@ -71,21 +71,21 @@ mid = [124811915] # 被关注用户UID
 secret = [true] # 悄悄关注
 
 # 弹幕发送
-[danmakuPost]
+[danmaku_post]
 enable = false # 开关
 aid = [25581792] # 稿件av号
 message = ["哔哩哔哩 (゜-゜)つロ 干杯~"] # 弹幕内容
 moment = [0] # 弹幕发送时间(为-1则随机选择发送时间)
 
 # 评论点赞
-[commentLike]
+[comment_like]
 enable = false # 开关
 otype = ["article"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
 oid = [617468] # 作品ID
 rpid = [864171896] # 评论ID
 
 # 评论发表
-[commentPost]
+[comment_post]
 enable = false # 开关
 otype = ["video"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
 oid = [25581792] # 作品ID
@@ -94,59 +94,59 @@ floor = [0] # 目标楼层(为0则直接发表一条评论)
 critical = [3] # 临界范围
 
 # 动态点赞
-[dynamicLike]
+[dynamic_like]
 enable = false # 开关
 did = [155455735691418008] # 动态ID
 
 # 动态转发
-[dynamicRepost]
+[dynamic_repost]
 enable = false # 开关
 did = [155455735691418008] # 动态ID
 message = ["转发动态"] # 转发内容
 ats = [[]] # 被@用户UID列表
 
 # 会员购抢购
-[mallRush]
+[mall_rush]
 enable = false # 开关
-itemID = [10001749] # 商品ID
+item_id = [10001749] # 商品ID
 thread = [2] # 线程数
 headless = true # 隐藏窗口
 timeout = 10 # 超时刷新
 
 # 会员购周年庆活动签到
-[mallSign]
+[mall_sign]
 enable = false # 开关
 
 # 会员购周年庆活动扭蛋
-[mallLottery]
+[mall_lottery]
 enable = false # 开关
 
 # 会员购周年庆活动中奖查询
-[mallPrize]
+[mall_prize]
 enable = false # 开关
 
 # 直播助手
-[liveTool]
+[live_tool]
 enable = false # 开关
-autoUpdate = true # 自动更新
-printDanmaku = false # 显示弹幕
-dailySilver2Coins = false # 每日银瓜子兑换硬币
-dailyCoins2Silver = false # 每日硬币兑换银瓜子
-monitorRoom = 23058 # 监听房间
+auto_update = true # 自动更新
+print_danmaku = false # 显示弹幕
+daily_silver_to_coin = false # 每日银瓜子兑换硬币
+daily_coin_to_silver = false # 每日硬币兑换银瓜子
+monitor_room = 23058 # 监听房间
 
 # 每日自动投币
-[liveTool.dailyGiveCoins]
+[live_tool.daily_reward]
 number = 5 # 总投币枚数(为0则关闭该组件)
-specialUp = [] # 投给特定Up主(列表为空则随机投给排行榜上的Up主)
+specific_up = [] # 投给特定Up主(列表为空则随机投给排行榜上的Up主)
 
 # 投满当前佩戴勋章的亲密度
-[liveTool.gainIntimacy]
+[live_tool.gain_intimacy]
 enable = true # 开关
-otherRoom = [] # 其余勋章对应房间
+other_room = [] # 其余勋章对应房间
 
 # 自动送出即将过期的直播礼物
-[liveTool.giveExpiringGifts]
+[live_tool.give_expiring_gifts]
 enable = true # 开关
-expiringTime = 43200 # 过期倒计时
-toMedal = true # 投喂给勋章
-toRoom = 5551309 # 投喂给房间
+expiring_time = 43200 # 过期倒计时
+to_medal = true # 投喂给勋章
+to_room = 5551309 # 投喂给房间
