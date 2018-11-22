@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.11.22-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.11.23-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -15,13 +15,13 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/9/19      |登录                          |
+|login               |2018/11/22     |登录                          |
 |query               |2018/8/28      |获取用户信息                  |
 |set_privacy         |2018/7/24      |修改隐私设置                  |
 |silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |
 |watch               |2018/8/30      |观看                          |
 |like                |2018/7/8       |好评                          |
-|reward              |2018/6/20      |投币                          |
+|reward              |2018/11/22     |投币                          |
 |favour              |2018/6/20      |收藏                          |
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
@@ -53,7 +53,7 @@ $ nano config.toml
 2. 使用pip安装所需依赖
 
 ```
-$ python3.6 -m pip install requests rsa selenium toml
+$ python3.6 -m pip install -U requests rsa selenium toml
 ```
 
 3. 使用Python 3.6启动脚本

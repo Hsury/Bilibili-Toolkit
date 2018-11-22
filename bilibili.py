@@ -4,6 +4,23 @@
 """Bilibili Toolkit 哔哩哔哩工具箱
 https://github.com/Hsury/Bilibili-Toolkit"""
 
+banner = r"""
+                     //
+         \\         //
+          \\       //
+    ##DDDDDDDDDDDDDDDDDDDDDD##
+    ## DDDDDDDDDDDDDDDDDDDD ##    ________   ___   ___        ___   ________   ___   ___        ___
+    ## hh                hh ##   |\   __  \ |\  \ |\  \      |\  \ |\   __  \ |\  \ |\  \      |\  \
+    ## hh    //    \\    hh ##   \ \  \|\ /_\ \  \\ \  \     \ \  \\ \  \|\ /_\ \  \\ \  \     \ \  \
+    ## hh   //      \\   hh ##    \ \   __  \\ \  \\ \  \     \ \  \\ \   __  \\ \  \\ \  \     \ \  \
+    ## hh                hh ##     \ \  \|\  \\ \  \\ \  \____ \ \  \\ \  \|\  \\ \  \\ \  \____ \ \  \
+    ## hh      wwww      hh ##      \ \_______\\ \__\\ \_______\\ \__\\ \_______\\ \__\\ \_______\\ \__\
+    ## hh                hh ##       \|_______| \|__| \|_______| \|__| \|_______| \|__| \|_______| \|__|
+    ## MMMMMMMMMMMMMMMMMMMM ##
+    ##MMMMMMMMMMMMMMMMMMMMMM##                          哔哩哔哩 (゜-゜)つロ 干杯~
+         \/            \/
+"""
+
 import base64
 import hashlib
 import io
@@ -27,7 +44,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.11.22"
+__version__ = "2018.11.23"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -1165,8 +1182,9 @@ def main():
             live_tool_process.terminate()
 
 if __name__ == '__main__':
+    print(f"{banner}\n{__doc__}\n版本: {__version__}\n")
     if platform.system() == "Windows":
         freeze_support()
     main()
     if platform.system() == "Windows":
-        os.system("pause")
+        os.system("pause >nul | set /p =请按任意键退出")
