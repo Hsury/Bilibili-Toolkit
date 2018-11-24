@@ -5,18 +5,22 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.11.23-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.11.24-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
 <h4 align="center">🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作</h4>
 
+<p align="center">
+<img src="https://cdn.kagamiz.com/Bilibili-Toolkit/demo.png" width="750">
+</p>
+
 ## 功能
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/11/22     |登录                          |
-|query               |2018/8/28      |获取用户信息                  |
+|login               |2018/11/24     |登录                          |
+|get_user_info       |2018/8/28      |获取用户信息                  |
 |set_privacy         |2018/7/24      |修改隐私设置                  |
 |silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |
 |watch               |2018/8/30      |观看                          |
@@ -30,13 +34,14 @@
 |comment_post        |2018/8/26      |评论发表                      |
 |dynamic_like        |2018/6/29      |动态点赞                      |
 |dynamic_repost      |2018/10/13     |动态转发                      |
+|dynamic_purge       |2018/11/24     |动态清理                      |
 |mall_rush           |2018/9/24      |会员购抢购                    |
 |mall_sign           |2018/9/19      |会员购周年庆活动签到          |
 |mall_lottery        |2018/9/24      |会员购周年庆活动扭蛋          |
 |mall_prize          |2018/9/19      |会员购周年庆活动中奖查询      |
-|live_tool           |2018/8/30      |直播助手                      |
+|live_tool           |2018/11/24     |直播助手                      |
 
-*注：[liveTool直播助手组件](https://github.com/Hsury/Bilibili-Live-Tool)编译自[yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)*
+*注：周期性任务主要由live_tool组件执行，请前往[这里](https://github.com/Hsury/Bilibili-Live-Tool)以了解更多*
 
 ## 使用指南
 
@@ -68,7 +73,7 @@ $ python3.6 bilibili.py
 
 ## 登录验证码识别API
 
-使用CNN卷积神经网络构建，识别准确率达到98.6%
+使用CNN卷积神经网络构建，识别准确率达到98.8%
 
 ```
 url = "http://132.232.138.236:2233/captcha"

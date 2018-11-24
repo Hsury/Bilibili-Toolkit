@@ -21,7 +21,7 @@ username=33娘;password=GodKnows;
 # Cookie: bili_jct=...;DedeUserID=...;DedeUserID__ckMd5=...;sid=...;SESSDATA=...;
 
 # 获取用户信息
-[query]
+[get_user_info]
 enable = true # 开关
 
 # 修改隐私设置
@@ -104,6 +104,10 @@ enable = false # 开关
 did = [155455735691418008] # 动态ID
 message = ["转发动态"] # 转发内容
 ats = [[]] # 被@用户UID列表
+
+# 动态清理
+[dynamic_purge]
+enable = false # 开关
 
 # 会员购抢购
 [mall_rush]
