@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.11.24-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.11.25-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -39,7 +39,7 @@
 |mall_sign           |2018/9/19      |会员购周年庆活动签到          |
 |mall_lottery        |2018/9/24      |会员购周年庆活动扭蛋          |
 |mall_prize          |2018/9/19      |会员购周年庆活动中奖查询      |
-|live_tool           |2018/11/24     |直播助手                      |
+|live_tool           |2018/11/25     |直播助手                      |
 
 *注：周期性任务主要由live_tool组件执行，请前往[这里](https://github.com/Hsury/Bilibili-Live-Tool)以了解更多*
 

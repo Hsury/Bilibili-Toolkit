@@ -5,25 +5,21 @@
 https://github.com/Hsury/Bilibili-Toolkit"""
 
 banner = r"""
-                     //
-         \\         //
-          \\       //
-    ##DDDDDDDDDDDDDDDDDDDDDD##
-    ## DDDDDDDDDDDDDDDDDDDD ##    ________   ___   ___        ___   ________   ___   ___        ___
-    ## hh                hh ##   |\   __  \ |\  \ |\  \      |\  \ |\   __  \ |\  \ |\  \      |\  \
-    ## hh    //    \\    hh ##   \ \  \|\ /_\ \  \\ \  \     \ \  \\ \  \|\ /_\ \  \\ \  \     \ \  \
-    ## hh   //      \\   hh ##    \ \   __  \\ \  \\ \  \     \ \  \\ \   __  \\ \  \\ \  \     \ \  \
-    ## hh                hh ##     \ \  \|\  \\ \  \\ \  \____ \ \  \\ \  \|\  \\ \  \\ \  \____ \ \  \
-    ## hh      wwww      hh ##      \ \_______\\ \__\\ \_______\\ \__\\ \_______\\ \__\\ \_______\\ \__\
-    ## hh                hh ##       \|_______| \|__| \|_______| \|__| \|_______| \|__| \|_______| \|__|
-    ## MMMMMMMMMMMMMMMMMMMM ##
-    ##MMMMMMMMMMMMMMMMMMMMMM##                          哔哩哔哩 (゜-゜)つロ 干杯~
-         \/            \/
+        \\         //
+         \\       //
+    #####################     ________   ___   ___        ___   ________   ___   ___        ___
+    ##                 ##    |\   __  \ |\  \ |\  \      |\  \ |\   __  \ |\  \ |\  \      |\  \
+    ##    //     \\    ##    \ \  \|\ /_\ \  \\ \  \     \ \  \\ \  \|\ /_\ \  \\ \  \     \ \  \
+    ##   //       \\   ##     \ \   __  \\ \  \\ \  \     \ \  \\ \   __  \\ \  \\ \  \     \ \  \
+    ##                 ##      \ \  \|\  \\ \  \\ \  \____ \ \  \\ \  \|\  \\ \  \\ \  \____ \ \  \
+    ##       www       ##       \ \_______\\ \__\\ \_______\\ \__\\ \_______\\ \__\\ \_______\\ \__\
+    ##                 ##        \|_______| \|__| \|_______| \|__| \|_______| \|__| \|_______| \|__|
+    #####################
+        \/         \/                               哔哩哔哩 (゜-゜)つロ 干杯~
 """
 
 import base64
 import hashlib
-import io
 import json
 import os
 import platform
@@ -31,7 +27,6 @@ import random
 import requests
 import rsa
 import shutil
-import string
 import subprocess
 import sys
 import threading
@@ -44,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.11.24"
+__version__ = "2018.11.25"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -1168,7 +1163,7 @@ def main():
                     live_tool_current_commit = f.read()
             except:
                 live_tool_current_commit = None
-            live_tool_latest_commit = live_tool_current_commit if live_tool_current_commit else "ae24be0"
+            live_tool_latest_commit = live_tool_current_commit if live_tool_current_commit else "1289068"
             if config['live_tool']['auto_update']:
                 try:
                     live_tool_latest_commit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()['tag_name']
