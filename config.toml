@@ -43,19 +43,24 @@ enable = true # 开关
 enable = true # 开关
 aid = [29278585, 20032006, 14594803] # 稿件av号
 
-# 好评
+# 点赞
 [like]
-enable = true # 开关
+enable = false # 开关
 aid = [29278585, 20032006, 14594803] # 稿件av号
 
 # 投币
 [reward]
-enable = true # 开关
+enable = false # 开关
 aid = [29278585, 20032006, 14594803] # 稿件av号
 double = [true, true, true] # 双倍投币
 
 # 收藏
 [favour]
+enable = false # 开关
+aid = [29278585, 20032006, 14594803] # 稿件av号
+
+# 三连推荐
+[combo]
 enable = true # 开关
 aid = [29278585, 20032006, 14594803] # 稿件av号
 

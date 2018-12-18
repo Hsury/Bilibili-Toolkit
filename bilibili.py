@@ -39,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.11.25"
+__version__ = "2018.12.18"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -423,7 +423,7 @@ class Bilibili():
         self._log(f"av{aid}观看失败 {response}")
         return False
     
-    # 好评
+    # 点赞
     def like(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like"
@@ -439,10 +439,10 @@ class Bilibili():
         }
         response = self._requests("post", url, data=payload, headers=headers)
         if response and response.get("code") == 0:
-            self._log(f"av{aid}好评成功")
+            self._log(f"av{aid}点赞成功")
             return True
         else:
-            self._log(f"av{aid}好评失败 {response}")
+            self._log(f"av{aid}点赞失败 {response}")
             return False
     
     # 投币
@@ -498,6 +498,27 @@ class Bilibili():
             return True
         else:
             self._log(f"av{aid}收藏失败 {response}")
+            return False
+    
+    # 三连推荐
+    def combo(self, aid):
+        # aid = 稿件av号
+        url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like/triple"
+        payload = {
+            'aid': aid,
+            'csrf': self.get_csrf(),
+        }
+        headers = {
+            'Host': "api.bilibili.com",
+            'Origin': "https://www.bilibili.com",
+            'Referer': f"https://www.bilibili.com/video/av{aid}",
+        }
+        response = self._requests("post", url, data=payload, headers=headers)
+        if response and response.get("code") == 0:
+            self._log(f"av{aid}三连推荐成功")
+            return True
+        else:
+            self._log(f"av{aid}三连推荐失败 {response}")
             return False
     
     # 分享
@@ -599,7 +620,6 @@ class Bilibili():
         # oid = 作品ID
         # rpid = 评论ID
         if Bilibili.patterns.get(otype) is None:
-            self._log("不支持的作品类型")
             return False
         url = f"{self.protocol}://api.bilibili.com/x/v2/reply/action"
         payload = {
@@ -632,7 +652,6 @@ class Bilibili():
         # floor = 目标楼层
         # critical = 临界范围
         if Bilibili.patterns.get(otype) is None:
-            self._log("不支持的作品类型")
             return False
         while True:
             url = f"{self.protocol}://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={Bilibili.patterns[otype]['id']}&oid={oid}&sort=0&_={int(time.time())}"
@@ -645,10 +664,10 @@ class Bilibili():
                 current_floor = response['data']['replies'][0]['floor']
                 delta_floor = floor - current_floor if floor else 1
                 if delta_floor > max(1, critical):
-                    self._log(f"当前评论楼层数为{current_floor}, 距离目标楼层还有{delta_floor}层")
+                    self._log(f"作品{oid}当前评论楼层数为{current_floor}, 距离目标楼层还有{delta_floor}层")
                     time.sleep(min(3, max(0, (delta_floor - 10) * 0.1)))
                 elif delta_floor > 0:
-                    self._log(f"当前评论楼层数为{current_floor}, 开始提交评论")
+                    self._log(f"作品{oid}当前评论楼层数为{current_floor}, 开始提交评论")
                     url = f"{self.protocol}://api.bilibili.com/x/v2/reply/add"
                     payload = {
                         'oid': oid,
@@ -669,16 +688,17 @@ class Bilibili():
                         response = self._requests("post", url, data=payload, headers=headers)
                         if response and response.get("code") == 0:
                             success += 1
-                            self._log(f"评论({success}/{delta_floor})提交成功")
+                            self._log(f"作品{oid}提交评论\"{message}\"({success}/{delta_floor})成功")
                         else:
-                            self._log(f"评论({success}/{delta_floor})提交失败 {response}")
+                            self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败 {response}")
+                            time.sleep(10)
                     if not floor:
                         break
                 else:
-                    self._log(f"当前评论楼层数为{current_floor}, 目标楼层已过")
+                    self._log(f"作品{oid}当前评论楼层数为{current_floor}, 目标楼层已过")
                     break
             else:
-                self._log(f"当前评论楼层数获取失败 {response}")
+                self._log(f"作品{oid}当前评论楼层数获取失败 {response}")
                 time.sleep(1)
     
     # 动态点赞
@@ -1047,6 +1067,8 @@ def wrapper(arg):
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.reward, 10, list(zip(config['reward']['aid'], config['reward']['double'])))))
         if config['favour']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.favour, 10, list(zip(config['favour']['aid'])))))
+        if config['combo']['enable']:
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.combo, 10, list(zip(config['combo']['aid'])))))
         if config['share']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.share, 10, list(zip(config['share']['aid'])))))
         if config['follow']['enable']:
@@ -1056,8 +1078,9 @@ def wrapper(arg):
         if config['comment_like']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_like, 10, list(zip(config['comment_like']['otype'], config['comment_like']['oid'], config['comment_like']['rpid'])))))
         if config['comment_post']['enable']:
-            for comment in zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical']):
-                threads.append(threading.Thread(target=instance.comment_post, args=(comment[0], comment[1], comment[2], comment[3], comment[4])))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_post, 60, list(zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical'])))))
+            # for comment in zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical']):
+            #     threads.append(threading.Thread(target=instance.comment_post, args=(comment[0], comment[1], comment[2], comment[3], comment[4])))
         if config['dynamic_like']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_like, 10, list(zip(config['dynamic_like']['did'])))))
         if config['dynamic_repost']['enable']:
@@ -1073,12 +1096,12 @@ def wrapper(arg):
             threads.append(threading.Thread(target=instance.mall_lottery))
         if config['mall_prize']['enable']:
             threads.append(threading.Thread(target=instance.mall_prize))
-        # instance.log("任务开始执行")
+        # instance._log("任务开始执行")
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
-        # instance.log("任务执行完毕")
+        # instance._log("任务执行完毕")
     return {
         'username': instance.username,
         'password': instance.password,
@@ -1104,9 +1127,9 @@ def main():
                 if len(pair.split("=")) == 2:
                     key, value = pair.split("=")
                     pairs[key] = value
-            password = True if all(key in pairs for key in ["username", "password"]) else False
-            token = True if all(key in pairs for key in ["access_token", "refresh_token"]) else False
-            cookie = True if all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) else False
+            password = all(key in pairs for key in ["username", "password"])
+            token = all(key in pairs for key in ["access_token", "refresh_token"])
+            cookie = all(key in pairs for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"])
             if password or token or cookie:
                 accounts.append(pairs)
         except:

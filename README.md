@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.11.25-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2018.12.18-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -24,14 +24,15 @@
 |set_privacy         |2018/7/24      |修改隐私设置                  |
 |silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |
 |watch               |2018/8/30      |观看                          |
-|like                |2018/7/8       |好评                          |
+|like                |2018/7/8       |点赞                          |
 |reward              |2018/11/22     |投币                          |
 |favour              |2018/6/20      |收藏                          |
+|combo               |2018/12/18     |三连推荐                      |
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
 |danmaku_post        |2018/8/28      |弹幕发送                      |
 |comment_like        |2018/6/27      |评论点赞                      |
-|comment_post        |2018/8/26      |评论发表                      |
+|comment_post        |2018/12/18     |评论发表                      |
 |dynamic_like        |2018/6/29      |动态点赞                      |
 |dynamic_repost      |2018/10/13     |动态转发                      |
 |dynamic_purge       |2018/11/24     |动态清理                      |
