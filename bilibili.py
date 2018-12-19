@@ -39,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.12.18"
+__version__ = "2018.12.19"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -215,7 +215,7 @@ class Bilibili():
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
                 response = self._requests("post", url, data=payload, headers=headers)
                 while True:
-                    if response:
+                    if response and response.get("code") is not None:
                         if response['code'] == -105:
                             url = f"{self.protocol}://passport.bilibili.com/captcha"
                             headers = {'Host': "passport.bilibili.com"}
@@ -370,7 +370,7 @@ class Bilibili():
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
         response = self._requests("get", url)
-        if response:
+        if response and response.get("data") is not None:
             cid = response['data']['cid']
             duration = response['data']['duration']
         else:
@@ -575,7 +575,7 @@ class Bilibili():
         # moment = 弹幕发送时间
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
         response = self._requests("get", url)
-        if response:
+        if response and response.get("data") is not None:
             oid = response['data']['cid']
             duration = response['data']['duration']
         else:
@@ -686,12 +686,18 @@ class Bilibili():
                     success = 0
                     while success < delta_floor:
                         response = self._requests("post", url, data=payload, headers=headers)
-                        if response and response.get("code") == 0:
-                            success += 1
-                            self._log(f"作品{oid}提交评论\"{message}\"({success}/{delta_floor})成功")
-                        else:
-                            self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败 {response}")
-                            time.sleep(10)
+                        if response and response.get("code") is not None:
+                            if response['code'] == 0:
+                                success += 1
+                                self._log(f"作品{oid}提交评论\"{message}\"({success}/{delta_floor})成功")
+                                continue
+                            elif response['code'] == 12015:
+                                self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})时出现验证码, 1分钟后重试")
+                                time.sleep(60)
+                                continue
+                            else:
+                                self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败 {response}")
+                        time.sleep(1)
                     if not floor:
                         break
                 else:
@@ -1062,29 +1068,29 @@ def wrapper(arg):
         if config['watch']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.watch, 5, list(zip(config['watch']['aid'])))))
         if config['like']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.like, 10, list(zip(config['like']['aid'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.like, 5, list(zip(config['like']['aid'])))))
         if config['reward']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.reward, 10, list(zip(config['reward']['aid'], config['reward']['double'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.reward, 5, list(zip(config['reward']['aid'], config['reward']['double'])))))
         if config['favour']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.favour, 10, list(zip(config['favour']['aid'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.favour, 5, list(zip(config['favour']['aid'])))))
         if config['combo']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.combo, 10, list(zip(config['combo']['aid'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.combo, 5, list(zip(config['combo']['aid'])))))
         if config['share']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.share, 10, list(zip(config['share']['aid'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.share, 5, list(zip(config['share']['aid'])))))
         if config['follow']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow, 10, list(zip(config['follow']['mid'], config['follow']['secret'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow, 5, list(zip(config['follow']['mid'], config['follow']['secret'])))))
         if config['danmaku_post']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.danmaku_post, 10, list(zip(config['danmaku_post']['aid'], config['danmaku_post']['message'], config['danmaku_post']['moment'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.danmaku_post, 5, list(zip(config['danmaku_post']['aid'], config['danmaku_post']['message'], config['danmaku_post']['moment'])))))
         if config['comment_like']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_like, 10, list(zip(config['comment_like']['otype'], config['comment_like']['oid'], config['comment_like']['rpid'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_like, 5, list(zip(config['comment_like']['otype'], config['comment_like']['oid'], config['comment_like']['rpid'])))))
         if config['comment_post']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_post, 60, list(zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_post, 5, list(zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical'])))))
             # for comment in zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical']):
             #     threads.append(threading.Thread(target=instance.comment_post, args=(comment[0], comment[1], comment[2], comment[3], comment[4])))
         if config['dynamic_like']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_like, 10, list(zip(config['dynamic_like']['did'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_like, 5, list(zip(config['dynamic_like']['did'])))))
         if config['dynamic_repost']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_repost, 10, list(zip(config['dynamic_repost']['did'], config['dynamic_repost']['message'], config['dynamic_repost']['ats'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_repost, 5, list(zip(config['dynamic_repost']['did'], config['dynamic_repost']['message'], config['dynamic_repost']['ats'])))))
         if config['dynamic_purge']['enable']:
             threads.append(threading.Thread(target=instance.dynamic_purge))
         if config['mall_rush']['enable']:
@@ -1111,6 +1117,7 @@ def wrapper(arg):
     }
 
 def main():
+    print(f"{banner}\n{__doc__}\n版本: {__version__}\n")
     config_file = sys.argv[1] if len(sys.argv) > 1 else "config.toml"
     try:
         config = toml.load(config_file)
@@ -1271,9 +1278,7 @@ def main():
             live_tool_process.terminate()
 
 if __name__ == "__main__":
-    print(f"{banner}\n{__doc__}\n版本: {__version__}\n")
-    if platform.system() == "Windows":
-        freeze_support()
+    freeze_support()
     main()
     if platform.system() == "Windows":
         os.system("pause >nul | set /p =请按任意键退出")
