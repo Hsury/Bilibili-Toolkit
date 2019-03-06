@@ -122,6 +122,12 @@ thread = [2] # 线程数
 headless = true # 隐藏窗口
 timeout = 10 # 超时刷新
 
+# 会员购优惠卷领取
+[mall_coupon]
+enable = false # 开关
+coupon_id = ["df73652b539b1c6c", "f2a4f59ad6a1682f"] # 优惠券ID
+thread = [8, 8] # 线程数
+
 # 会员购周年庆活动签到
 [mall_sign]
 enable = false # 开关
@@ -140,8 +146,6 @@ enable = false # 开关
 auto_update = true # 自动更新
 print_danmaku = false # 显示弹幕
 daily_silver_to_coin = false # 每日银瓜子兑换硬币
-daily_coin_to_silver = false # 每日硬币兑换银瓜子
-monitor_room = 23058 # 监听房间
 
 # 每日自动投币
 [live_tool.daily_reward]
@@ -156,6 +160,6 @@ other_room = [] # 其余勋章对应房间
 # 自动送出即将过期的直播礼物
 [live_tool.give_expiring_gifts]
 enable = true # 开关
-expiring_time = 43200 # 过期倒计时
+expiring_time = 0 # 过期倒计时
 to_medal = true # 投喂给勋章
 to_room = 5551309 # 投喂给房间

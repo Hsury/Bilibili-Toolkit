@@ -39,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2018.12.19"
+__version__ = "2019.3.6"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -63,9 +63,9 @@ class Bilibili():
     }
     
     def __init__(self, https=True):
-        self.session = requests.Session()
-        self.session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36"})
-        self.get_cookies = lambda: self.session.cookies.get_dict(domain=".bilibili.com")
+        self._session = requests.Session()
+        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.96 Safari/537.36"})
+        self.get_cookies = lambda: self._session.cookies.get_dict(domain=".bilibili.com")
         self.get_csrf = lambda: self.get_cookies().get("bili_jct", "")
         self.get_sid = lambda: self.get_cookies().get("sid", "")
         self.get_uid = lambda: self.get_cookies().get("DedeUserID", "")
@@ -96,12 +96,18 @@ class Bilibili():
         if method in ["get", "post"]:
             for _ in range(retry + 1):
                 try:
-                    response = getattr(self.session, method)(url, timeout=timeout, proxies=self.proxy if enable_proxy else None, **kwargs)
+                    response = getattr(self._session, method)(url, timeout=timeout, proxies=self.proxy if enable_proxy else None, **kwargs)
                     return response.json() if decode_level == 2 else response.content if decode_level == 1 else response
                 except:
                     if enable_proxy:
                         self.set_proxy()
         return None
+    
+    def _solve_captcha(self, image):
+        url = "https://bili.dev/captcha"
+        payload = {'image': base64.b64encode(image).decode("utf-8")}
+        response = self._requests("post", url, json=payload)
+        return response['message'] if response and response.get("code") == 0 else None
     
     @staticmethod
     def calc_sign(param):
@@ -109,19 +115,6 @@ class Bilibili():
         sign_hash = hashlib.md5()
         sign_hash.update(f"{param}{salt}".encode())
         return sign_hash.hexdigest()
-    
-    def import_credential(self, pairs):
-        for key, value in pairs.items():
-            if key == "username":
-                self.username = value
-            elif key == "password":
-                self.password = value
-            elif key == "access_token":
-                self.access_token = value
-            elif key == "refresh_token":
-                self.refresh_token = value
-            elif key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
-                self.session.cookies.set(key, value, domain=".bilibili.com")
     
     def set_proxy(self, add=None):
         if isinstance(add, str):
@@ -137,7 +130,7 @@ class Bilibili():
         return self.proxy
     
     # 登录
-    def login(self):
+    def login(self, credential):
         def by_cookie():
             url = f"{self.protocol}://api.bilibili.com/x/space/myinfo"
             headers = {'Host': "api.bilibili.com"}
@@ -154,7 +147,7 @@ class Bilibili():
             url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.calc_sign(param)}"
             response = self._requests("get", url)
             if response and response.get("code") == 0:
-                self.import_credential({'DedeUserID': str(response['data']['mid'])})
+                self._session.cookies.set('DedeUserID', str(response['data']['mid']), domain=".bilibili.com")
                 self._log(f"Token仍有效, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['expires_in'])))}")
                 param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&gourl={self.protocol}%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
                 url = f"{self.protocol}://passport.bilibili.com/api/login/sso?{param}&sign={self.calc_sign(param)}"
@@ -172,7 +165,7 @@ class Bilibili():
                 response = self._requests("post", url, data=payload, headers=headers)
                 if response and response.get("code") == 0:
                     for cookie in response['data']['cookie_info']['cookies']:
-                        self.import_credential({cookie['name']: cookie['value']})
+                        self._session.cookies.set(cookie['name'], cookie['value'], domain=".bilibili.com")
                     self.access_token = response['data']['token_info']['access_token']
                     self.refresh_token = response['data']['token_info']['refresh_token']
                     self._log(f"Token刷新成功, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['token_info']['expires_in'])))}")
@@ -200,12 +193,6 @@ class Bilibili():
                     else:
                         time.sleep(1)
             
-            def recognize_captcha(image):
-                url = "http://132.232.138.236:2233/captcha"
-                payload = base64.b64encode(image)
-                response = self._requests("post", url, data=payload, decode_level=1)
-                return response.decode() if response and len(response) == 5 else None
-            
             while True:
                 key = get_key()
                 key_hash, pub_key = key['key_hash'], key['pub_key']
@@ -220,9 +207,9 @@ class Bilibili():
                             url = f"{self.protocol}://passport.bilibili.com/captcha"
                             headers = {'Host': "passport.bilibili.com"}
                             response = self._requests("get", url, headers=headers, decode_level=1)
-                            captcha = recognize_captcha(response)
+                            captcha = self._solve_captcha(response)
                             if captcha:
-                                self._log(f"验证码识别结果: {captcha}")
+                                self._log(f"登录验证码识别结果: {captcha}")
                                 key = get_key()
                                 key_hash, pub_key = key['key_hash'], key['pub_key']
                                 url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
@@ -231,13 +218,13 @@ class Bilibili():
                                 headers = {'Content-type': "application/x-www-form-urlencoded"}
                                 response = self._requests("post", url, data=payload, headers=headers)
                             else:
-                                self._log(f"验证码识别服务暂时不可用, {'尝试更换代理' if self.proxy else '10秒后重试'}")
+                                self._log(f"登录验证码识别服务暂时不可用, {'尝试更换代理' if self.proxy else '10秒后重试'}")
                                 if not self.set_proxy():
                                     time.sleep(10)
                                 break
                         elif response['code'] == 0 and response['data']['status'] == 0:
                             for cookie in response['data']['cookie_info']['cookies']:
-                                self.import_credential({cookie['name']: cookie['value']})
+                                self._session.cookies.set(cookie['name'], cookie['value'], domain=".bilibili.com")
                             self.access_token = response['data']['token_info']['access_token']
                             self.refresh_token = response['data']['token_info']['refresh_token']
                             self._log("登录成功")
@@ -251,6 +238,15 @@ class Bilibili():
                             time.sleep(60)
                         break
         
+        self._session.cookies.clear()
+        for name in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
+            value = credential.get(name)
+            if value:
+                self._session.cookies.set(name, value, domain=".bilibili.com")
+        self.access_token = credential.get("access_token", "")
+        self.refresh_token = credential.get("refresh_token", "")
+        self.username = credential.get("username", "")
+        self.password = credential.get("password", "")
         if all(key in self.get_cookies() for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) and by_cookie():
             return True
         elif self.access_token and self.refresh_token and by_token():
@@ -258,7 +254,7 @@ class Bilibili():
         elif self.username and self.password and by_password():
             return True
         else:
-            self.session.cookies.clear()
+            self._session.cookies.clear()
             return False
     
     # 获取用户信息
@@ -692,8 +688,21 @@ class Bilibili():
                                 self._log(f"作品{oid}提交评论\"{message}\"({success}/{delta_floor})成功")
                                 continue
                             elif response['code'] == 12015:
-                                self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})时出现验证码, 1分钟后重试")
-                                time.sleep(60)
+                                response = self._requests("get", response['data']['url'], headers=headers, decode_level=1)
+                                captcha = self._solve_captcha(response)
+                                if captcha:
+                                    self._log(f"评论验证码识别结果: {captcha}")
+                                    payload['code'] = captcha
+                                else:
+                                    self._log(f"评论验证码识别服务暂时不可用, 1分钟后重试")
+                                    time.sleep(60)
+                                continue
+                            elif response['code'] == 12035:
+                                self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败, 该账号被UP主列入评论黑名单")
+                                break
+                            elif response['code'] == -105:
+                                if "code" in payload:
+                                    payload.pop("code")
                                 continue
                             else:
                                 self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败 {response}")
@@ -920,6 +929,95 @@ class Bilibili():
         for thread in threads:
             thread.join()
     
+    # 会员购优惠卷领取
+    def mall_coupon(self, coupon_id, thread=1):
+        # coupon_id = 优惠券ID
+        # thread = 线程数
+        def get_coupon_info(coupon_id):
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/coupon/user_coupon_code_receive_status_list"
+            payload = {
+                'couponIds': [str(coupon_id)],
+                'mid': "",
+                'csrf': self.get_csrf(),
+            }
+            headers = {
+                'Host': "mall.bilibili.com",
+                'Origin': "https://www.bilibili.com",
+            }
+            response = self._requests("post", url, json=payload, headers=headers)
+            if response and response.get("code") == 0:
+                return {
+                    'end': response['data'][0]['receiveEndTime'],
+                    'message': response['data'][0]['couponStatusMsg'],
+                    'name': response['data'][0]['couponName'],
+                    'total': response['data'][0]['provideNum'],
+                    'remain': response['data'][0]['remainNum'],
+                    'start': response['data'][0]['receiveStartTime'],
+                    'status': response['data'][0]['receiveStatus'],
+                }
+        
+        def get_server_time(target_time=0):
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/common/time/remain?v={int(time.time())}&targetTime={target_time}"
+            headers = {
+                'Host': "mall.bilibili.com",
+                'Origin': "https://www.bilibili.com",
+            }
+            response = self._requests("get", url, headers=headers)
+            if response and response.get("code") == 0:
+                return {
+                    'current': response['data']['serverTime'],
+                    'remain': response['data']['remainSeconds'],
+                }
+        
+        def executor(thread_id):
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/coupon/create_coupon_code?couponId={coupon_id}&deviceId="
+            payload = {'csrf': self.get_csrf()}
+            headers = {
+                'Host': "mall.bilibili.com",
+                'Origin': "https://www.bilibili.com",
+            }
+            nonlocal flag
+            while not flag:
+                response = self._requests("post", url, json=payload, headers=headers)
+                if response and response.get("code") is not None:
+                    if response['code'] == 83094004:
+                        self._log(f"(线程{thread_id})会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id})领取成功")
+                    elif response['code'] == 83110005:
+                        self._log(f"(线程{thread_id})会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id})领取失败, 优惠券领取数量已达到上限")
+                    elif response['code'] == 83110015:
+                        self._log(f"(线程{thread_id})会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id})领取失败, 优惠券库存不足")
+                    else:
+                        continue
+                else:
+                    self._log(f"(线程{thread_id})会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id})领取失败, 当前IP请求过于频繁")
+                flag = True
+        
+        coupon_info = get_coupon_info(coupon_id)
+        if coupon_info:
+            if coupon_info['message'] == "可领取":
+                server_time = get_server_time(coupon_info['start'])
+                if server_time:
+                    delay = max(server_time['remain'] - 3, 0)
+                    self._log(f"会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id})可领取时间为{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(coupon_info['start']))}至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(coupon_info['end']))}, 库存{coupon_info['remain']}张, 将于{delay}秒后开始领取")
+                    time.sleep(delay)
+                else:
+                    self._log(f"会员购服务器时间获取失败")
+                    return
+            else:
+                self._log(f"会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id}){coupon_info['message']}")
+                return
+        else:
+            self._log(f"会员购优惠卷{coupon_id}信息获取失败")
+            return
+        flag = False
+        threads = []
+        for i in range(thread):
+            threads.append(threading.Thread(target=executor, args=(i + 1,)))
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+    
     # 会员购周年庆活动签到
     def mall_sign(self):
         url = f"{self.protocol}://mall.bilibili.com/activity/game/sign?gameId=3"
@@ -1036,8 +1134,8 @@ def decompress(file, remove=True):
         os.remove(file)
     print(f"{file}解压完毕")
 
-def wrapper(arg):
-    def delay_wrapper(func, interval, args_list=[()], shuffle=True):
+def wrapper(args):
+    def delay_wrapper(func, interval, args_list=[()], shuffle=False):
         if shuffle:
             random.shuffle(args_list)
         for i in range(len(args_list)):
@@ -1045,19 +1143,18 @@ def wrapper(arg):
             if i < len(args_list) - 1:
                 time.sleep(interval)
     
-    config, account = arg['config'], arg['account']
+    config, account = args['config'], args['account']
     instance = Bilibili(config['global']['https'])
     if config['proxy']['enable']:
         if isinstance(config['proxy']['pool'], str):
             try:
                 with open(config['proxy']['pool'], "r") as f:
-                    instance.set_proxy(add=[proxy for proxy in f.read().strip().split("\n") if proxy])
+                    instance.set_proxy(add=[proxy for proxy in f.read().strip().splitlines() if proxy and proxy[0] != "#"])
             except:
                 pass
         elif isinstance(config['proxy']['pool'], list):
             instance.set_proxy(add=config['proxy']['pool'])
-    instance.import_credential(account)
-    if instance.login():
+    if instance.login(account):
         threads = []
         if config['get_user_info']['enable']:
             threads.append(threading.Thread(target=instance.get_user_info))
@@ -1096,6 +1193,9 @@ def wrapper(arg):
         if config['mall_rush']['enable']:
             for item in zip(config['mall_rush']['item_id'], config['mall_rush']['thread']):
                 threads.append(threading.Thread(target=instance.mall_rush, args=(item[0], item[1], config['mall_rush']['headless'], config['mall_rush']['timeout'])))
+        if config['mall_coupon']['enable']:
+            for coupon in zip(config['mall_coupon']['coupon_id'], config['mall_coupon']['thread']):
+                threads.append(threading.Thread(target=instance.mall_coupon, args=(coupon[0], coupon[1])))
         if config['mall_sign']['enable']:
             threads.append(threading.Thread(target=instance.mall_sign))
         if config['mall_lottery']['enable']:
@@ -1125,7 +1225,7 @@ def main():
         print(f"无法加载{config_file}")
         return
     accounts = []
-    for line in config['user']['account'].split("\n"):
+    for line in config['user']['account'].splitlines():
         try:
             if line[0] == "#":
                 continue
@@ -1161,9 +1261,9 @@ def main():
                 os.system(f"{prefix}yum -y install chromedriver")
         elif platform.system() == "Windows":
             if not os.path.exists("chrome-win\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/609904/chrome-win.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/637110/chrome-win.zip"))
             if not os.path.exists("chromedriver.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.44/chromedriver_win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.46/chromedriver_win32.zip"))
         else:
             print("会员购抢购组件不支持在当前平台上运行")
             config['mall_rush']['enable'] = False
@@ -1173,17 +1273,17 @@ def main():
             live_tool_support = True
             live_tool_pkg = "bilibili-live-tool-linux-amd64.tar.gz"
             live_tool_cwd = "./bilibili-live-tool-linux-amd64"
-            live_tool_exec = "./bilibiliLiveTool"
+            live_tool_exec = "./live"
         elif platform.system() == "Linux" and "arm" in platform.machine():
             live_tool_support = True
             live_tool_pkg = "bilibili-live-tool-linux-arm.tar.gz"
             live_tool_cwd = "./bilibili-live-tool-linux-arm"
-            live_tool_exec = "./bilibiliLiveTool"
+            live_tool_exec = "./live"
         elif platform.system() == "Windows":
             live_tool_support = True
             live_tool_pkg = "bilibili-live-tool-windows.zip"
             live_tool_cwd = "bilibili-live-tool-windows"
-            live_tool_exec = f"{live_tool_cwd}\\bilibiliLiveTool.exe"
+            live_tool_exec = f"{live_tool_cwd}\\live.exe"
         else:
             live_tool_support = False
             print("直播助手组件不支持在当前平台上运行")
@@ -1193,7 +1293,7 @@ def main():
                     live_tool_current_commit = f.read()
             except:
                 live_tool_current_commit = None
-            live_tool_latest_commit = live_tool_current_commit if live_tool_current_commit else "1289068"
+            live_tool_latest_commit = live_tool_current_commit if live_tool_current_commit else "b6d3fd0"
             if config['live_tool']['auto_update']:
                 try:
                     live_tool_latest_commit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()['tag_name']
@@ -1203,14 +1303,9 @@ def main():
                     pass
             if live_tool_current_commit != live_tool_latest_commit:
                 decompress(download(f"https://github.com/Hsury/Bilibili-Live-Tool/releases/download/{live_tool_latest_commit}/{live_tool_pkg}"))
-            live_tool_config = {}
-            live_tool_config['users'] = []
-            live_tool_config['platform'] = {}
-            live_tool_config['print_control'] = {}
-            live_tool_config['task_control'] = {}
-            live_tool_config['other_control'] = {}
+            live_tool_user = {'users': []}
             for account in accounts:
-                live_tool_config['users'].append({
+                live_tool_user['users'].append({
                     'username': account.get("username", ""),
                     'password': account.get("password", ""),
                     'access_key': account.get("access_token", ""),
@@ -1219,23 +1314,30 @@ def main():
                     'uid': account.get("DedeUserID", ""),
                     'refresh_token': account.get("refresh_token", ""),
                 })
-            live_tool_config['platform']['platform'] = "ios_pythonista"
-            live_tool_config['print_control']['danmu'] = config['live_tool']['print_danmaku']
-            live_tool_config['task_control']['clean-expiring-gift'] = config['live_tool']['give_expiring_gifts']['enable']
-            live_tool_config['task_control']['set-expiring-time'] = config['live_tool']['give_expiring_gifts']['expiring_time']
-            live_tool_config['task_control']['clean_expiring_gift2all_medal'] = config['live_tool']['give_expiring_gifts']['to_medal']
-            live_tool_config['task_control']['clean-expiring-gift2room'] = config['live_tool']['give_expiring_gifts']['to_room']
-            live_tool_config['task_control']['silver2coin'] = config['live_tool']['daily_silver_to_coin']
-            live_tool_config['task_control']['send2wearing-medal'] = config['live_tool']['gain_intimacy']['enable']
-            live_tool_config['task_control']['send2medal'] = config['live_tool']['gain_intimacy']['other_room']
-            live_tool_config['task_control']['doublegain_coin2silver'] = config['live_tool']['daily_coin_to_silver']
-            live_tool_config['task_control']['givecoin'] = config['live_tool']['daily_reward']['number']
-            live_tool_config['task_control']['fetchrule'] = "uper" if config['live_tool']['daily_reward']['specific_up'] else "bilitop"
-            live_tool_config['task_control']['mid'] = config['live_tool']['daily_reward']['specific_up']
-            live_tool_config['other_control']['default_monitor_roomid'] = config['live_tool']['monitor_room']
-            live_tool_config['other_control']['raffle_minitor_roomid'] = 0
-            with open(os.path.join(live_tool_cwd, "config", "user.toml"), "w") as f:
-                toml.dump(live_tool_config, f)
+            with open(os.path.join(live_tool_cwd, "conf", "user.toml"), "w") as f:
+                toml.dump(live_tool_user, f)
+            live_tool_ctrl = {
+                'print_control': {'danmu': config['live_tool']['print_danmaku']},
+                'task_control': {
+                    'clean-expiring-gift': config['live_tool']['give_expiring_gifts']['enable'],
+                    'set-expiring-time': config['live_tool']['give_expiring_gifts']['expiring_time'],
+                    'clean_expiring_gift2all_medal': config['live_tool']['give_expiring_gifts']['to_medal'],
+                    'clean-expiring-gift2room': config['live_tool']['give_expiring_gifts']['to_room'],
+                    'silver2coin': config['live_tool']['daily_silver_to_coin'],
+                    'send2wearing-medal': config['live_tool']['gain_intimacy']['enable'],
+                    'send2medal': config['live_tool']['gain_intimacy']['other_room'],
+                    'givecoin': config['live_tool']['daily_reward']['number'],
+                    'fetchrule': "uper" if config['live_tool']['daily_reward']['specific_up'] else "bilitop",
+                    'mid': config['live_tool']['daily_reward']['specific_up'],
+                },
+                'other_control': {
+                    'default_monitor_roomid': 23058,
+                    'raffle_minitor_roomid': 0,
+                    'area_ids': [1, 2, 3, 4, 5, 6],
+                },
+            }
+            with open(os.path.join(live_tool_cwd, "conf", "ctrl.toml"), "w") as f:
+                toml.dump(live_tool_ctrl, f)
             try:
                 live_tool_process = subprocess.Popen([live_tool_exec], cwd=live_tool_cwd)
             except:

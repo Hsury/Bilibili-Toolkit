@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2018.12.19-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.3.6-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -19,7 +19,7 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2018/11/24     |登录                          |
+|login               |2019/3/5       |登录                          |
 |get_user_info       |2018/8/28      |获取用户信息                  |
 |set_privacy         |2018/7/24      |修改隐私设置                  |
 |silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |
@@ -32,15 +32,16 @@
 |follow              |2018/7/8       |关注                          |
 |danmaku_post        |2018/8/28      |弹幕发送                      |
 |comment_like        |2018/6/27      |评论点赞                      |
-|comment_post        |2018/12/19     |评论发表                      |
+|comment_post        |2019/3/5       |评论发表                      |
 |dynamic_like        |2018/6/29      |动态点赞                      |
 |dynamic_repost      |2018/10/13     |动态转发                      |
 |dynamic_purge       |2018/11/24     |动态清理                      |
 |mall_rush           |2018/9/24      |会员购抢购                    |
+|mall_coupon         |2019/3/3       |会员购优惠卷领取              |
 |mall_sign           |2018/9/19      |会员购周年庆活动签到          |
 |mall_lottery        |2018/9/24      |会员购周年庆活动扭蛋          |
 |mall_prize          |2018/9/19      |会员购周年庆活动中奖查询      |
-|live_tool           |2018/11/25     |直播助手                      |
+|live_tool           |2019/3/6       |直播助手                      |
 
 *注：周期性任务主要由live_tool组件执行，请前往[这里](https://github.com/Hsury/Bilibili-Live-Tool)以了解更多*
 
@@ -51,41 +52,44 @@
 1. 克隆或[下载](https://github.com/Hsury/Bilibili-Toolkit/archive/master.zip)本代码仓库，并修改默认配置文件config.toml
 
 ```
-$ git clone https://github.com/Hsury/Bilibili-Toolkit.git
-$ cd Bilibili-Toolkit
-$ nano config.toml
+git clone https://github.com/Hsury/Bilibili-Toolkit.git
+cd Bilibili-Toolkit
+nano config.toml
 ```
 
 2. 使用pip安装所需依赖
 
 ```
-$ python3.6 -m pip install -U requests rsa selenium toml
+pip install -U requests rsa selenium toml
 ```
 
-3. 使用Python 3.6启动脚本
+3. 使用Python 3.6+启动脚本
 
 ```
-$ python3.6 bilibili.py
+python bilibili.py
 ```
 
 ### 二进制版本
 
 从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件config.toml后运行即可
 
-## 登录验证码识别API
+## 图形验证码识别API
 
-使用CNN卷积神经网络构建，识别准确率达到98.8%
+使用CNN卷积神经网络构建，已实现对**登录、评论**验证码的自适应识别
 
 ```
-url = "http://132.232.138.236:2233/captcha"
-payload = base64.b64encode(image)
-response = requests.post(url, data=payload)
-captcha = response.text
+requests.post("https://bili.dev/captcha", json={'image': base64.b64encode(image).decode("utf-8")})
 ```
+
+## 交流
+
+QQ群：[956399361](https://jq.qq.com/?_wv=1027&k=5BO0c7o)
 
 ## 捐赠
 
-若本项目对您有所帮助，欢迎请我喝杯~~妹汁~~ (=・ω・=)
+作者在本项目的开发过程中投入了大量的时间与精力，且验证码识别服务器的运行也需要一定的成本
+
+若本项目帮助到了您，为您带来了直接或间接的收益，不要吝啬请我喝几杯~~妹汁~~喔 (=・ω・=)
 
 <p align="center">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay.png" width="250">
