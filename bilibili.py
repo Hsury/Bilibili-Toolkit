@@ -39,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.3.6"
+__version__ = "2019.3.11"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -61,10 +61,10 @@ class Bilibili():
             'prefix': "https://www.bilibili.com/read/cv",
         },
     }
-    
+
     def __init__(self, https=True):
         self._session = requests.Session()
-        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.96 Safari/537.36"})
+        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36"})
         self.get_cookies = lambda: self._session.cookies.get_dict(domain=".bilibili.com")
         self.get_csrf = lambda: self.get_cookies().get("bili_jct", "")
         self.get_sid = lambda: self.get_cookies().get("sid", "")
@@ -88,10 +88,10 @@ class Bilibili():
         self.protocol = "https" if https else "http"
         self.proxy = None
         self.proxy_pool = set()
-    
+
     def _log(self, message):
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.username if self.username else '#' + self.get_uid() if self.get_uid() else ''}] {message}")
-    
+
     def _requests(self, method, url, decode_level=2, enable_proxy=True, retry=10, timeout=15, **kwargs):
         if method in ["get", "post"]:
             for _ in range(retry + 1):
@@ -102,20 +102,20 @@ class Bilibili():
                     if enable_proxy:
                         self.set_proxy()
         return None
-    
+
     def _solve_captcha(self, image):
         url = "https://bili.dev/captcha"
         payload = {'image': base64.b64encode(image).decode("utf-8")}
         response = self._requests("post", url, json=payload)
         return response['message'] if response and response.get("code") == 0 else None
-    
+
     @staticmethod
     def calc_sign(param):
         salt = "560c52ccd288fed045859ed18bffd973"
         sign_hash = hashlib.md5()
         sign_hash.update(f"{param}{salt}".encode())
         return sign_hash.hexdigest()
-    
+
     def set_proxy(self, add=None):
         if isinstance(add, str):
             self.proxy_pool.add(add)
@@ -128,7 +128,7 @@ class Bilibili():
         else:
             self.proxy = None
         return self.proxy
-    
+
     # 登录
     def login(self, credential):
         def by_cookie():
@@ -141,7 +141,7 @@ class Bilibili():
             else:
                 self._log("Cookie已失效")
                 return False
-        
+
         def by_token():
             param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&ts={int(time.time())}"
             url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.calc_sign(param)}"
@@ -175,7 +175,7 @@ class Bilibili():
                     self.refresh_token = ""
                     self._log("Token刷新失败")
             return False
-        
+
         def by_password():
             def get_key():
                 url = f"{self.protocol}://passport.bilibili.com/api/oauth2/getKey"
@@ -192,7 +192,7 @@ class Bilibili():
                         }
                     else:
                         time.sleep(1)
-            
+
             while True:
                 key = get_key()
                 key_hash, pub_key = key['key_hash'], key['pub_key']
@@ -237,7 +237,7 @@ class Bilibili():
                         if not self.set_proxy():
                             time.sleep(60)
                         break
-        
+
         self._session.cookies.clear()
         for name in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
             value = credential.get(name)
@@ -256,7 +256,7 @@ class Bilibili():
         else:
             self._session.cookies.clear()
             return False
-    
+
     # 获取用户信息
     def get_user_info(self):
         url = f"{self.protocol}://api.bilibili.com/x/space/myinfo?jsonp=jsonp"
@@ -279,7 +279,7 @@ class Bilibili():
         else:
             self._log("用户信息获取失败")
             return False
-    
+
     # 修改隐私设置
     def set_privacy(self, show_favourite=None, show_bangumi=None, show_tag=None, show_reward=None, show_info=None, show_game=None):
         # show_favourite = 展示[我的收藏夹]
@@ -331,7 +331,7 @@ class Bilibili():
         else:
             self._log(f"隐私设置修改失败 {fail}")
             return False
-    
+
     # 银瓜子兑换硬币
     def silver_to_coin(self, app=True, pc=False):
         # app = APP通道
@@ -360,7 +360,7 @@ class Bilibili():
                 self._log("银瓜子兑换硬币(PC通道)成功")
             else:
                 self._log(f"银瓜子兑换硬币(PC通道)失败 {response}")
-    
+
     # 观看
     def watch(self, aid):
         # aid = 稿件av号
@@ -418,7 +418,7 @@ class Bilibili():
                     return True
         self._log(f"av{aid}观看失败 {response}")
         return False
-    
+
     # 点赞
     def like(self, aid):
         # aid = 稿件av号
@@ -440,7 +440,7 @@ class Bilibili():
         else:
             self._log(f"av{aid}点赞失败 {response}")
             return False
-    
+
     # 投币
     def reward(self, aid, double=True):
         # aid = 稿件av号
@@ -464,7 +464,7 @@ class Bilibili():
         else:
             self._log(f"av{aid}投{2 if double else 1}枚硬币失败 {response}")
             return self.reward(aid, False) if double else False
-    
+
     # 收藏
     def favour(self, aid):
         # aid = 稿件av号
@@ -495,7 +495,7 @@ class Bilibili():
         else:
             self._log(f"av{aid}收藏失败 {response}")
             return False
-    
+
     # 三连推荐
     def combo(self, aid):
         # aid = 稿件av号
@@ -516,7 +516,7 @@ class Bilibili():
         else:
             self._log(f"av{aid}三连推荐失败 {response}")
             return False
-    
+
     # 分享
     def share(self, aid):
         # aid = 稿件av号
@@ -538,7 +538,7 @@ class Bilibili():
         else:
             self._log(f"av{aid}分享失败 {response}")
             return False
-    
+
     # 关注
     def follow(self, mid, secret=False):
         # mid = 被关注用户UID
@@ -563,22 +563,36 @@ class Bilibili():
         else:
             self._log(f"用户{mid}{'悄悄' if secret else ''}关注失败 {response}")
             return False
-    
+
     # 弹幕发送
-    def danmaku_post(self, aid, message, moment=-1):
+    def danmaku_post(self, aid, message, page=1, moment=-1):
         # aid = 稿件av号
         # message = 弹幕内容
+        # page = 分P
         # moment = 弹幕发送时间
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
         response = self._requests("get", url)
         if response and response.get("data") is not None:
-            oid = response['data']['cid']
-            duration = response['data']['duration']
+            page_info = {page['page']: {
+                'cid': page['cid'],
+                'duration': page['duration'],
+            } for page in response['data']['pages']}
+            if page in page_info:
+                oid = page_info[page]['cid']
+                duration = page_info[page]['duration']
+            else:
+                self._log(f"av{aid}不存在P{page}")
+                return False
         else:
             self._log(f"av{aid}信息解析失败")
             return False
+        url = f"{self.protocol}://api.bilibili.com/x/v2/dm/post"
+        headers = {
+            'Host': "api.bilibili.com",
+            'Origin': "https://www.bilibili.com",
+            'Referer': f"https://www.bilibili.com/video/av{aid}",
+        }
         while True:
-            url = f"{self.protocol}://api.bilibili.com/x/v2/dm/post"
             payload = {
                 'type': 1,
                 'oid': oid,
@@ -593,23 +607,18 @@ class Bilibili():
                 'plat': 1,
                 'csrf': self.get_csrf(),
             }
-            headers = {
-                'Host': "api.bilibili.com",
-                'Origin': "https://www.bilibili.com",
-                'Referer': f"https://www.bilibili.com/video/av{aid}",
-            }
             response = self._requests("post", url, data=payload, headers=headers)
             if response and response.get("code") is not None:
                 if response['code'] == 0:
-                    self._log(f"av{aid}弹幕\"{message}\"发送成功")
+                    self._log(f"av{aid}(P{page})弹幕\"{message}\"发送成功")
                     return True
                 elif response['code'] == 36703:
-                    self._log(f"av{aid}弹幕发送频率过快, 10秒后重试")
+                    self._log(f"av{aid}(P{page})弹幕发送频率过快, 10秒后重试")
                     time.sleep(10)
                 else:
-                    self._log(f"av{aid}弹幕\"{message}\"发送失败 {response}")
+                    self._log(f"av{aid}(P{page})弹幕\"{message}\"发送失败 {response}")
                     return False
-    
+
     # 评论点赞
     def comment_like(self, otype, oid, rpid):
         # otype = 作品类型
@@ -639,7 +648,7 @@ class Bilibili():
         else:
             self._log(f"评论{rpid}点赞失败 {response}")
             return False
-    
+
     # 评论发表
     def comment_post(self, otype, oid, message, floor=0, critical=1):
         # otype = 作品类型
@@ -649,12 +658,12 @@ class Bilibili():
         # critical = 临界范围
         if Bilibili.patterns.get(otype) is None:
             return False
+        headers = {
+            'Host': "api.bilibili.com",
+            'Referer': f"{Bilibili.patterns[otype]['prefix']}{oid}",
+        }
         while True:
             url = f"{self.protocol}://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={Bilibili.patterns[otype]['id']}&oid={oid}&sort=0&_={int(time.time())}"
-            headers = {
-                'Host': "api.bilibili.com",
-                'Referer': f"{Bilibili.patterns[otype]['prefix']}{oid}",
-            }
             response = self._requests("get", url, headers=headers)
             if response and response.get("code") == 0:
                 current_floor = response['data']['replies'][0]['floor']
@@ -715,7 +724,7 @@ class Bilibili():
             else:
                 self._log(f"作品{oid}当前评论楼层数获取失败 {response}")
                 time.sleep(1)
-    
+
     # 动态点赞
     def dynamic_like(self, did):
         # did = 动态ID
@@ -739,7 +748,7 @@ class Bilibili():
         else:
             self._log(f"动态{did}点赞失败 {response}")
             return False
-    
+
     # 动态转发
     def dynamic_repost(self, did, message="转发动态", ats=[]):
         # did = 动态ID
@@ -752,7 +761,7 @@ class Bilibili():
                 return response['data']['card']['name']
             else:
                 return ""
-        
+
         url = f"{self.protocol}://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost"
         ctrl = []
         for at in zip(ats, [uid_to_nickname(mid) for mid in ats]):
@@ -779,12 +788,12 @@ class Bilibili():
         }
         response = self._requests("post", url, data=payload, headers=headers)
         if response and response.get("code") == 0:
-            self._log(f"动态{did}转发成功, 新动态ID为{response['data']['dynamic_id']}")
+            self._log(f"动态{did}转发成功")
             return True
         else:
             self._log(f"动态{did}转发失败 {response}")
             return False
-    
+
     # 动态清理
     def dynamic_purge(self):
         def get_lottery_dynamics():
@@ -799,15 +808,15 @@ class Bilibili():
                 url = f"{self.protocol}://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/space_history?visitor_uid={self.get_uid()}&host_uid={self.get_uid()}&offset_dynamic_id={offset}"
                 response = self._requests("get", url, headers=headers)
                 if response and response.get("code") == 0:
-                    dynamics.extend([{
-                        'did': card['desc']['dynamic_id'],
-                        'lottery_did': card['desc']['orig_dy_id'],
-                    } for card in response['data']['cards'] if card['desc']['orig_type'] == 2])
                     if response['data']['has_more']:
+                        dynamics.extend([{
+                            'did': card['desc']['dynamic_id'],
+                            'lottery_did': card['desc']['orig_dy_id'],
+                        } for card in response['data']['cards'] if card['desc']['orig_type'] == 2 or card['desc']['orig_type'] == 1024])
                         offset = response['data']['cards'][-1]['desc']['dynamic_id']
                     else:
                         return dynamics
-        
+
         dynamics = get_lottery_dynamics()
         self._log(f"发现{len(dynamics)}条互动抽奖动态")
         delete = 0
@@ -820,7 +829,7 @@ class Bilibili():
             }
             response = self._requests("get", url, headers=headers)
             if response and response.get("code") == 0:
-                expired = response['data']['status'] == 2
+                expired = response['data']['status'] == 2 or response['data']['status'] == -1
                 winning = any([self.get_uid() in winners for winners in [response['data'].get("lottery_result", {}).get(f"{level}_prize_result", []) for level in ["first", "second", "third"]]])
                 if not expired:
                     self._log(f"动态{dynamic['lottery_did']}尚未开奖({time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(response['data']['lottery_time']))}), 跳过")
@@ -848,7 +857,7 @@ class Bilibili():
                             self._log(f"动态{dynamic['lottery_did']}未中奖, 清理失败")
             time.sleep(1)
         self._log(f"清理了{delete}条动态")
-    
+
     # 会员购抢购
     def mall_rush(self, item_id, thread=1, headless=True, timeout=10):
         # item_id = 商品ID
@@ -863,7 +872,7 @@ class Bilibili():
                 except:
                     element = None
                 return element
-            
+
             options = webdriver.ChromeOptions()
             options.add_argument("log-level=3")
             if headless:
@@ -920,7 +929,7 @@ class Bilibili():
                         timestamp = time.time()
                 except:
                     pass
-        
+
         threads = []
         for i in range(thread):
             threads.append(threading.Thread(target=executor, args=(i + 1,)))
@@ -928,7 +937,7 @@ class Bilibili():
             thread.start()
         for thread in threads:
             thread.join()
-    
+
     # 会员购优惠卷领取
     def mall_coupon(self, coupon_id, thread=1):
         # coupon_id = 优惠券ID
@@ -955,7 +964,7 @@ class Bilibili():
                     'start': response['data'][0]['receiveStartTime'],
                     'status': response['data'][0]['receiveStatus'],
                 }
-        
+
         def get_server_time(target_time=0):
             url = f"{self.protocol}://mall.bilibili.com/mall-c/common/time/remain?v={int(time.time())}&targetTime={target_time}"
             headers = {
@@ -968,7 +977,7 @@ class Bilibili():
                     'current': response['data']['serverTime'],
                     'remain': response['data']['remainSeconds'],
                 }
-        
+
         def executor(thread_id):
             url = f"{self.protocol}://mall.bilibili.com/mall-c/coupon/create_coupon_code?couponId={coupon_id}&deviceId="
             payload = {'csrf': self.get_csrf()}
@@ -991,7 +1000,7 @@ class Bilibili():
                 else:
                     self._log(f"(线程{thread_id})会员购优惠卷\"{coupon_info['name']}\"(ID={coupon_id})领取失败, 当前IP请求过于频繁")
                 flag = True
-        
+
         coupon_info = get_coupon_info(coupon_id)
         if coupon_info:
             if coupon_info['message'] == "可领取":
@@ -1017,7 +1026,7 @@ class Bilibili():
             thread.start()
         for thread in threads:
             thread.join()
-    
+
     # 会员购周年庆活动签到
     def mall_sign(self):
         url = f"{self.protocol}://mall.bilibili.com/activity/game/sign?gameId=3"
@@ -1033,7 +1042,7 @@ class Bilibili():
         else:
             self._log(f"会员购周年庆活动签到失败 {response}")
             return False
-    
+
     # 会员购周年庆活动扭蛋
     def mall_lottery(self):
         jackpots = {
@@ -1084,7 +1093,7 @@ class Bilibili():
                     self._log(f"会员购周年庆活动扭蛋失败 {response}")
                     return
             time.sleep(2)
-    
+
     # 会员购周年庆活动中奖查询
     def mall_prize(self):
         url = f"{self.protocol}://mall.bilibili.com/activity/lucky_draw_record/my_lucky_draw_list?gameId=3"
@@ -1142,7 +1151,7 @@ def wrapper(args):
             func(*args_list[i])
             if i < len(args_list) - 1:
                 time.sleep(interval)
-    
+
     config, account = args['config'], args['account']
     instance = Bilibili(config['global']['https'])
     if config['proxy']['enable']:
@@ -1177,7 +1186,7 @@ def wrapper(args):
         if config['follow']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow, 5, list(zip(config['follow']['mid'], config['follow']['secret'])))))
         if config['danmaku_post']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.danmaku_post, 5, list(zip(config['danmaku_post']['aid'], config['danmaku_post']['message'], config['danmaku_post']['moment'])))))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.danmaku_post, 5, list(zip(config['danmaku_post']['aid'], config['danmaku_post']['message'], config['danmaku_post']['page'], config['danmaku_post']['moment'])))))
         if config['comment_like']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_like, 5, list(zip(config['comment_like']['otype'], config['comment_like']['oid'], config['comment_like']['rpid'])))))
         if config['comment_post']['enable']:

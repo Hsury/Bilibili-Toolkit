@@ -36,79 +36,80 @@ show_game = false # 展示[最近玩过的游戏]
 
 # 银瓜子兑换硬币
 [silver_to_coin]
-enable = true # 开关
+enable = false # 开关
 
 # 观看
 [watch]
-enable = true # 开关
-aid = [29278585, 20032006, 14594803] # 稿件av号
+enable = false # 开关
+aid = [120040, 21322566] # 稿件av号
 
 # 点赞
 [like]
 enable = false # 开关
-aid = [29278585, 20032006, 14594803] # 稿件av号
+aid = [120040, 21322566] # 稿件av号
 
 # 投币
 [reward]
 enable = false # 开关
-aid = [29278585, 20032006, 14594803] # 稿件av号
-double = [true, true, true] # 双倍投币
+aid = [120040, 21322566] # 稿件av号
+double = [false, true] # 双倍投币
 
 # 收藏
 [favour]
 enable = false # 开关
-aid = [29278585, 20032006, 14594803] # 稿件av号
+aid = [120040, 21322566] # 稿件av号
 
 # 三连推荐
 [combo]
-enable = true # 开关
-aid = [29278585, 20032006, 14594803] # 稿件av号
+enable = false # 开关
+aid = [120040, 21322566] # 稿件av号
 
 # 分享
 [share]
-enable = true # 开关
-aid = [29278585, 20032006, 14594803] # 稿件av号
+enable = false # 开关
+aid = [120040, 21322566] # 稿件av号
 
 # 关注
 [follow]
-enable = true # 开关
-mid = [124811915] # 被关注用户UID
-secret = [true] # 悄悄关注
+enable = false # 开关
+mid = [2, 208259] # 被关注用户UID
+secret = [true, false] # 悄悄关注
 
 # 弹幕发送
 [danmaku_post]
 enable = false # 开关
-aid = [25581792] # 稿件av号
-message = ["哔哩哔哩 (゜-゜)つロ 干杯~"] # 弹幕内容
-moment = [0] # 弹幕发送时间(为-1则随机选择发送时间)
+aid = [120040, 21322566] # 稿件av号
+message = ["哔哩哔哩 (゜-゜)つロ 干杯~", "哔哩哔哩 (゜-゜)つロ 干杯~"] # 弹幕内容
+page = [1, 1] # 分P
+moment = [-1, -1] # 弹幕发送时间(为-1则随机选择发送时间)
 
 # 评论点赞
 [comment_like]
 enable = false # 开关
-otype = ["article"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
-oid = [617468] # 作品ID
-rpid = [864171896] # 评论ID
+otype = ["video", "article"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
+oid = [120040, 328714] # 作品ID
+rpid = [45737039, 704676668] # 评论ID
 
 # 评论发表
 [comment_post]
 enable = false # 开关
-otype = ["video"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
-oid = [25581792] # 作品ID
-message = ["哔哩哔哩 (゜-゜)つロ 干杯~"] # 评论内容
-floor = [0] # 目标楼层(为0则直接发表一条评论)
-critical = [3] # 临界范围
+otype = ["video", "article"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
+oid = [120040, 328714] # 作品ID
+message = ["哔哩哔哩 (゜-゜)つロ 干杯~", "哔哩哔哩 (゜-゜)つロ 干杯~"] # 评论内容
+floor = [0, 0] # 目标楼层(为0则直接发表一条评论)
+critical = [3, 3] # 临界范围
 
 # 动态点赞
 [dynamic_like]
 enable = false # 开关
-did = [155455735691418008] # 动态ID
+did = [2701535477760, 30764064763443574] # 动态ID
 
 # 动态转发
 [dynamic_repost]
 enable = false # 开关
-did = [155455735691418008] # 动态ID
-message = ["转发动态"] # 转发内容
-ats = [[]] # 被@用户UID列表
+did = [2701535477760, 30764064763443574] # 动态ID
+message = ["转发动态", "转发动态"] # 转发内容
+ats = [[2, 208259], [208259, 2]] # 被@用户UID列表
 
 # 动态清理
 [dynamic_purge]
@@ -117,8 +118,8 @@ enable = false # 开关
 # 会员购抢购
 [mall_rush]
 enable = false # 开关
-item_id = [10001749] # 商品ID
-thread = [2] # 线程数
+item_id = [10000890, 10008264] # 商品ID
+thread = [2, 2] # 线程数
 headless = true # 隐藏窗口
 timeout = 10 # 超时刷新
 
@@ -149,17 +150,17 @@ daily_silver_to_coin = false # 每日银瓜子兑换硬币
 
 # 每日自动投币
 [live_tool.daily_reward]
-number = 5 # 总投币枚数(为0则关闭该组件)
+number = 0 # 总投币枚数(为0则关闭该组件)
 specific_up = [] # 投给特定Up主(列表为空则随机投给排行榜上的Up主)
 
 # 投满当前佩戴勋章的亲密度
 [live_tool.gain_intimacy]
-enable = true # 开关
+enable = false # 开关
 other_room = [] # 其余勋章对应房间
 
 # 自动送出即将过期的直播礼物
 [live_tool.give_expiring_gifts]
-enable = true # 开关
+enable = false # 开关
 expiring_time = 0 # 过期倒计时
-to_medal = true # 投喂给勋章
+to_medal = false # 投喂给勋章
 to_room = 5551309 # 投喂给房间

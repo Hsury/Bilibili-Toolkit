@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.3.6-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.3.11-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -30,12 +30,12 @@
 |combo               |2018/12/18     |三连推荐                      |
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
-|danmaku_post        |2018/8/28      |弹幕发送                      |
+|danmaku_post        |2019/3/11      |弹幕发送                      |
 |comment_like        |2018/6/27      |评论点赞                      |
 |comment_post        |2019/3/5       |评论发表                      |
 |dynamic_like        |2018/6/29      |动态点赞                      |
-|dynamic_repost      |2018/10/13     |动态转发                      |
-|dynamic_purge       |2018/11/24     |动态清理                      |
+|dynamic_repost      |2019/3/11      |动态转发                      |
+|dynamic_purge       |2019/3/11      |动态清理                      |
 |mall_rush           |2018/9/24      |会员购抢购                    |
 |mall_coupon         |2019/3/3       |会员购优惠卷领取              |
 |mall_sign           |2018/9/19      |会员购周年庆活动签到          |
@@ -103,7 +103,7 @@ QQ群：[956399361](https://jq.qq.com/?_wv=1027&k=5BO0c7o)
 
 > [czp3009/bilibili-api](https://github.com/czp3009/bilibili-api)
 
-> [yjqiang/bilibili-live-tools](https://github.com/yjqiang/bilibili-live-tools)
+> [yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)
 
 ## 许可证
 
