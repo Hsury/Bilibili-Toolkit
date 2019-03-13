@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.3.11-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.3.13-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 

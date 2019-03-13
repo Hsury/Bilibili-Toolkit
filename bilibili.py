@@ -39,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.3.11"
+__version__ = "2019.3.13"
 
 class Bilibili():
     app_key = "1d8b6e7d45233436"
@@ -1157,7 +1157,7 @@ def wrapper(args):
     if config['proxy']['enable']:
         if isinstance(config['proxy']['pool'], str):
             try:
-                with open(config['proxy']['pool'], "r") as f:
+                with open(config['proxy']['pool'], "r", encoding="utf-8") as f:
                     instance.set_proxy(add=[proxy for proxy in f.read().strip().splitlines() if proxy and proxy[0] != "#"])
             except:
                 pass
@@ -1298,7 +1298,7 @@ def main():
             print("直播助手组件不支持在当前平台上运行")
         if live_tool_support:
             try:
-                with open(os.path.join(live_tool_cwd, "commit"), "r") as f:
+                with open(os.path.join(live_tool_cwd, "commit"), "r", encoding="utf-8") as f:
                     live_tool_current_commit = f.read()
             except:
                 live_tool_current_commit = None
@@ -1323,7 +1323,7 @@ def main():
                     'uid': account.get("DedeUserID", ""),
                     'refresh_token': account.get("refresh_token", ""),
                 })
-            with open(os.path.join(live_tool_cwd, "conf", "user.toml"), "w") as f:
+            with open(os.path.join(live_tool_cwd, "conf", "user.toml"), "w", encoding="utf-8") as f:
                 toml.dump(live_tool_user, f)
             live_tool_ctrl = {
                 'print_control': {'danmu': config['live_tool']['print_danmaku']},
@@ -1345,7 +1345,7 @@ def main():
                     'area_ids': [1, 2, 3, 4, 5, 6],
                 },
             }
-            with open(os.path.join(live_tool_cwd, "conf", "ctrl.toml"), "w") as f:
+            with open(os.path.join(live_tool_cwd, "conf", "ctrl.toml"), "w", encoding="utf-8") as f:
                 toml.dump(live_tool_ctrl, f)
             try:
                 live_tool_process = subprocess.Popen([live_tool_exec], cwd=live_tool_cwd)
