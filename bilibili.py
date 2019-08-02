@@ -32,16 +32,16 @@ import sys
 import threading
 import time
 import toml
-from multiprocessing import freeze_support, Pool
+from multiprocessing import freeze_support, Manager, Pool, Process
 from selenium import webdriver
 from urllib import parse
 
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.3.13"
+__version__ = "2019.8.3"
 
-class Bilibili():
+class Bilibili:
     app_key = "1d8b6e7d45233436"
     patterns = {
         'video': {
@@ -62,9 +62,10 @@ class Bilibili():
         },
     }
 
-    def __init__(self, https=True):
+    def __init__(self, https=True, queue=None):
         self._session = requests.Session()
-        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36"})
+        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.87 Safari/537.36"})
+        self.__queue = queue
         self.get_cookies = lambda: self._session.cookies.get_dict(domain=".bilibili.com")
         self.get_csrf = lambda: self.get_cookies().get("bili_jct", "")
         self.get_sid = lambda: self.get_cookies().get("sid", "")
@@ -90,7 +91,9 @@ class Bilibili():
         self.proxy_pool = set()
 
     def _log(self, message):
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.username if self.username else '#' + self.get_uid() if self.get_uid() else ''}] {message}")
+        log = f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}][{self.username if self.username else '#' + self.get_uid() if self.get_uid() else ''}] {message}"
+        print(log)
+        self.__push_to_queue("log", log)
 
     def _requests(self, method, url, decode_level=2, enable_proxy=True, retry=10, timeout=15, **kwargs):
         if method in ["get", "post"]:
@@ -108,6 +111,15 @@ class Bilibili():
         payload = {'image': base64.b64encode(image).decode("utf-8")}
         response = self._requests("post", url, json=payload)
         return response['message'] if response and response.get("code") == 0 else None
+
+    def __push_to_queue(self, manufacturer, data):
+        if self.__queue:
+            self.__queue.put({
+                'uid': self.get_uid(),
+                'time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())),
+                'manufacturer': manufacturer,
+                'data': data,
+            })
 
     @staticmethod
     def calc_sign(param):
@@ -130,7 +142,7 @@ class Bilibili():
         return self.proxy
 
     # 登录
-    def login(self, credential):
+    def login(self, **kwargs):
         def by_cookie():
             url = f"{self.protocol}://api.bilibili.com/x/space/myinfo"
             headers = {'Host': "api.bilibili.com"}
@@ -240,13 +252,13 @@ class Bilibili():
 
         self._session.cookies.clear()
         for name in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]:
-            value = credential.get(name)
+            value = kwargs.get(name)
             if value:
                 self._session.cookies.set(name, value, domain=".bilibili.com")
-        self.access_token = credential.get("access_token", "")
-        self.refresh_token = credential.get("refresh_token", "")
-        self.username = credential.get("username", "")
-        self.password = credential.get("password", "")
+        self.access_token = kwargs.get("access_token", "")
+        self.refresh_token = kwargs.get("refresh_token", "")
+        self.username = kwargs.get("username", "")
+        self.password = kwargs.get("password", "")
         if all(key in self.get_cookies() for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) and by_cookie():
             return True
         elif self.access_token and self.refresh_token and by_token():
@@ -304,7 +316,7 @@ class Bilibili():
         response = self._requests("get", url, headers=headers)
         if response and response.get("status") == True:
             for key, value in privacy.items():
-                if not response['data']['privacy'][key] ^ value:
+                if response['data']['privacy'][key] == value:
                     privacy[key] = None
         else:
             self._log(f"隐私设置获取失败 {response}")
@@ -598,12 +610,12 @@ class Bilibili():
                 'oid': oid,
                 'msg': message,
                 'aid': aid,
-                'progress': int(moment * 1000) if moment != -1 else random.randint(0, duration * 1000),
+                'progress': int(moment * 1E3) if moment != -1 else random.randint(0, duration * 1E3),
                 'color': 16777215,
                 'fontsize': 25,
                 'pool': 0,
                 'mode': 1,
-                'rnd': int(time.time() * 1000000),
+                'rnd': int(time.time() * 1E6),
                 'plat': 1,
                 'csrf': self.get_csrf(),
             }
@@ -650,80 +662,51 @@ class Bilibili():
             return False
 
     # 评论发表
-    def comment_post(self, otype, oid, message, floor=0, critical=1):
+    def comment_post(self, otype, oid, message):
         # otype = 作品类型
         # oid = 作品ID
         # message = 评论内容
-        # floor = 目标楼层
-        # critical = 临界范围
         if Bilibili.patterns.get(otype) is None:
             return False
-        headers = {
-            'Host': "api.bilibili.com",
-            'Referer': f"{Bilibili.patterns[otype]['prefix']}{oid}",
-        }
+        url = f"{self.protocol}://api.bilibili.com/x/v2/reply/add"
         while True:
-            url = f"{self.protocol}://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn=1&type={Bilibili.patterns[otype]['id']}&oid={oid}&sort=0&_={int(time.time())}"
-            response = self._requests("get", url, headers=headers)
-            if response and response.get("code") == 0:
-                current_floor = response['data']['replies'][0]['floor']
-                delta_floor = floor - current_floor if floor else 1
-                if delta_floor > max(1, critical):
-                    self._log(f"作品{oid}当前评论楼层数为{current_floor}, 距离目标楼层还有{delta_floor}层")
-                    time.sleep(min(3, max(0, (delta_floor - 10) * 0.1)))
-                elif delta_floor > 0:
-                    self._log(f"作品{oid}当前评论楼层数为{current_floor}, 开始提交评论")
-                    url = f"{self.protocol}://api.bilibili.com/x/v2/reply/add"
-                    payload = {
-                        'oid': oid,
-                        'type': Bilibili.patterns[otype]['id'],
-                        'message': message,
-                        'plat': 1,
-                        'jsonp': "jsonp",
-                        'csrf': self.get_csrf(),
-                    }
-                    headers = {
-                        'Content-Type': "application/x-www-form-urlencoded; charset=UTF-8",
-                        'Host': "api.bilibili.com",
-                        'Origin': "https://www.bilibili.com",
-                        'Referer': f"{Bilibili.patterns[otype]['prefix']}{oid}",
-                    }
-                    success = 0
-                    while success < delta_floor:
-                        response = self._requests("post", url, data=payload, headers=headers)
-                        if response and response.get("code") is not None:
-                            if response['code'] == 0:
-                                success += 1
-                                self._log(f"作品{oid}提交评论\"{message}\"({success}/{delta_floor})成功")
-                                continue
-                            elif response['code'] == 12015:
-                                response = self._requests("get", response['data']['url'], headers=headers, decode_level=1)
-                                captcha = self._solve_captcha(response)
-                                if captcha:
-                                    self._log(f"评论验证码识别结果: {captcha}")
-                                    payload['code'] = captcha
-                                else:
-                                    self._log(f"评论验证码识别服务暂时不可用, 1分钟后重试")
-                                    time.sleep(60)
-                                continue
-                            elif response['code'] == 12035:
-                                self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败, 该账号被UP主列入评论黑名单")
-                                break
-                            elif response['code'] == -105:
-                                if "code" in payload:
-                                    payload.pop("code")
-                                continue
-                            else:
-                                self._log(f"作品{oid}提交评论\"{message}\"({success + 1}/{delta_floor})失败 {response}")
-                        time.sleep(1)
-                    if not floor:
-                        break
+            payload = {
+                'oid': oid,
+                'type': Bilibili.patterns[otype]['id'],
+                'message': message,
+                'plat': 1,
+                'jsonp': "jsonp",
+                'csrf': self.get_csrf(),
+            }
+            headers = {
+                'Content-Type': "application/x-www-form-urlencoded; charset=UTF-8",
+                'Host': "api.bilibili.com",
+                'Origin': "https://www.bilibili.com",
+                'Referer': f"{Bilibili.patterns[otype]['prefix']}{oid}",
+            }
+            response = self._requests("post", url, data=payload, headers=headers)
+            if response and response.get("code") is not None:
+                if response['code'] == 0:
+                    self._log(f"作品{oid}提交评论\"{message}\"成功")
+                    return True
+                elif response['code'] == 12015:
+                    response = self._requests("get", response['data']['url'], headers=headers, decode_level=1)
+                    captcha = self._solve_captcha(response)
+                    if captcha:
+                        self._log(f"评论验证码识别结果: {captcha}")
+                        payload['code'] = captcha
+                    else:
+                        self._log(f"评论验证码识别服务暂时不可用, 1分钟后重试")
+                        time.sleep(60)
+                elif response['code'] == 12035:
+                    self._log(f"作品{oid}提交评论\"{message}\"失败, 该账号被UP主列入评论黑名单")
+                    return False
+                elif response['code'] == -105:
+                    if "code" in payload:
+                        payload.pop("code")
                 else:
-                    self._log(f"作品{oid}当前评论楼层数为{current_floor}, 目标楼层已过")
-                    break
-            else:
-                self._log(f"作品{oid}当前评论楼层数获取失败 {response}")
-                time.sleep(1)
+                    self._log(f"作品{oid}提交评论\"{message}\"失败 {response}")
+                    return False
 
     # 动态点赞
     def dynamic_like(self, did):
@@ -830,7 +813,7 @@ class Bilibili():
             response = self._requests("get", url, headers=headers)
             if response and response.get("code") == 0:
                 expired = response['data']['status'] == 2 or response['data']['status'] == -1
-                winning = any([self.get_uid() in winners for winners in [response['data'].get("lottery_result", {}).get(f"{level}_prize_result", []) for level in ["first", "second", "third"]]])
+                winning = any(self.get_uid() in winners for winners in [response['data'].get("lottery_result", {}).get(f"{level}_prize_result", []) for level in ["first", "second", "third"]])
                 if not expired:
                     self._log(f"动态{dynamic['lottery_did']}尚未开奖({time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(response['data']['lottery_time']))}), 跳过")
                 else:
@@ -857,6 +840,41 @@ class Bilibili():
                             self._log(f"动态{dynamic['lottery_did']}未中奖, 清理失败")
             time.sleep(1)
         self._log(f"清理了{delete}条动态")
+
+    # 系统通知查询
+    def system_notice(self, time_span=["", ""], keyword=[]):
+        # time_span = 时间范围
+        # keyword = 包含关键字
+        cursor_span = [int(time.mktime(time.strptime(element, "%Y-%m-%d %H:%M:%S")) * 1E9) if element else "" for element in time_span]
+        headers = {
+            'Host': "message.bilibili.com",
+            'Referer': "https://message.bilibili.com/",
+        }
+        notice_list = []
+        cursor = cursor_span[1]
+        while True:
+            url = f"{self.protocol}://message.bilibili.com/api/notify/query.sysnotify.list.do?data_type=1{'&cursor=' + str(cursor) if cursor else ''}"
+            response = self._requests("get", url, headers=headers)
+            if response and response.get("code") == 0:
+                for notice in response['data']:
+                    if not cursor_span[0] or notice['cursor'] > cursor_span[0]:
+                        if not keyword or any(keyword in notice['title'] or keyword in notice['content'] for keyword in keyword):
+                            notice_list.append({
+                                'time': notice['time_at'],
+                                'title': notice['title'],
+                                'content': notice['content'],
+                            })
+                    else:
+                        break
+                else:
+                    if len(response['data']) == 20:
+                        cursor = notice['cursor']
+                        continue
+                self._log(f"系统通知获取成功, 总计{len(notice_list)}条通知")
+                for notice in notice_list:
+                    self._log(f"{notice['title']}({notice['time']}): {notice['content']}")
+                self.__push_to_queue("system_notice", notice_list)
+                return notice_list
 
     # 会员购抢购
     def mall_rush(self, item_id, thread=1, headless=True, timeout=10):
@@ -1027,95 +1045,190 @@ class Bilibili():
         for thread in threads:
             thread.join()
 
-    # 会员购周年庆活动签到
-    def mall_sign(self):
-        url = f"{self.protocol}://mall.bilibili.com/activity/game/sign?gameId=3"
-        headers = {
-            'Host': "mall.bilibili.com",
-            'Origin': "https://www.bilibili.com",
-            'Referer': "https://www.bilibili.com/blackboard/mall/activity-fySleoNP-.html",
-        }
-        response = self._requests("get", url, headers=headers)
-        if response and response.get("code") == 0:
-            self._log("会员购周年庆活动签到成功")
-            return True
-        else:
-            self._log(f"会员购周年庆活动签到失败 {response}")
-            return False
-
-    # 会员购周年庆活动扭蛋
-    def mall_lottery(self):
-        jackpots = {
-            'A档': 12,
-            'B档': 13,
-        }
-        if not (self.info['nickname'] and self.info['face']):
-            self.get_user_info()
-        url = f"{self.protocol}://mall.bilibili.com/activity/luckydraw"
-        payload = {
-            'gameId': 3,
-            'jackpotId': jackpots['A档'],
-            'mid': self.get_uid(),
-            'portrait': self.info['face'],
-            'uname': self.info['nickname'],
-        }
-        headers = {
-            'Content-Type': "application/json",
-            'Host': "mall.bilibili.com",
-            'Origin': "https://www.bilibili.com",
-            'Referer': "https://www.bilibili.com/blackboard/mall/activity-fySleoNP-.html",
-        }
-        while True:
-            response = self._requests("post", url, json=payload, headers=headers)
-            if response and response.get("code") is not None:
-                if response['code'] == 0:
-                    self._log(f"从{next((jackpot_name for jackpot_name, jackpot_id in jackpots.items() if jackpot_id == response['data']['jackpotId']), '未知档')}中扭到了{response['data']['prizeName']}, 还剩余{response['data']['remainPopularValue']}枚扭蛋币")
-                elif response['code'] == 83110025:
-                    self._log(f"扭蛋档(ID={payload['jackpotId']})不存在, 停止碰撞新扭蛋档ID")
-                    return
-                elif response['code'] == 83110026:
-                    self._log(f"扭蛋档(ID={payload['jackpotId']})已失效, 尝试碰撞新扭蛋档ID")
-                    jackpots = {jackpot_name: jackpots[jackpot_name] + len(jackpots) for jackpot_name in jackpots}
-                    payload['jackpotId'] += len(jackpots)
-                elif response['code'] == 83110027:
-                    self._log(f"扭蛋币数量已不足以扭{next((jackpot_name for jackpot_name, jackpot_id in jackpots.items() if jackpot_id == payload['jackpotId']), '未知档')}扭蛋")
-                    if payload['jackpotId'] in jackpots.values() and list(jackpots.values()).index(payload['jackpotId']) < len(jackpots) - 1:
-                        payload['jackpotId'] = list(jackpots.values())[list(jackpots.values()).index(payload['jackpotId']) + 1]
+    # 会员购订单列表查询
+    def mall_order_list(self, status=0, type=[2]):
+        # status = 订单状态
+        # type = 订单类型
+        def get_order_list(status, type):
+            headers = {
+                'Origin': "https://mall.bilibili.com",
+                'Referer': "https://mall.bilibili.com/orderlist.html",
+            }
+            order_list = []
+            page = 0
+            while True:
+                url = f"{self.protocol}://show.bilibili.com/api/ticket/ordercenter/list?pageNum={page}&pageSize=20&status={status}&customer=0&platform=h5&v={int(time.time())}"
+                response = self._requests("get", url, headers=headers)
+                if response and response.get("errno") == 0:
+                    data = response['data']['list']
+                    if data:
+                        for order in data:
+                            if not type or order['order_type'] in type:
+                                order_list.append(order)
+                        page += 1
                     else:
-                        return
-                elif response['code'] == 83110029:
-                    self._log(f"{next((jackpot_name for jackpot_name, jackpot_id in jackpots.items() if jackpot_id == payload['jackpotId']), '未知档')}中已经没有扭蛋了")
-                    if payload['jackpotId'] in jackpots.values() and list(jackpots.values()).index(payload['jackpotId']) < len(jackpots) - 1:
-                        payload['jackpotId'] = list(jackpots.values())[list(jackpots.values()).index(payload['jackpotId']) + 1]
-                    else:
-                        return
+                        self._log(f"会员购订单列表获取成功, 总计{len(order_list)}个订单")
+                        break
                 else:
-                    self._log(f"会员购周年庆活动扭蛋失败 {response}")
-                    return
-            time.sleep(2)
+                    self._log(f"会员购订单列表获取失败 {response}")
+            return order_list
+        
+        def get_order_detail(order_id):
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/order/detail?orderId={order_id}&platform=h5&time={int(time.time())}"
+            headers = {
+                'Origin': "https://mall.bilibili.com",
+                'Referer': f"https://mall.bilibili.com/orderdetail.html?orderId={order_id}",
+            }
+            response = self._requests("get", url, headers=headers)
+            if response and response.get("code") == 0 and response['data']['vo']:
+                data = response['data']['vo']
+                self._log(f"会员购订单{order_id}详情获取成功, 包含\"{data['skuList'][0]['itemsName']}\"等{len(data['skuList'])}件商品")
+                return data
+            else:
+                self._log(f"会员购订单{order_id}详情获取失败 {response}")
+                return {}
+        
+        def get_order_express(order_id):
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/order/express/detail?orderId={order_id}"
+            headers = {
+                'Origin': "https://mall.bilibili.com",
+                'Referer': f"https://mall.bilibili.com/orderdetail.html?orderId={order_id}",
+            }
+            for _ in range(5):
+                response = self._requests("get", url, headers=headers)
+                if response and response.get("code") == 0 and response['data']['vo']:
+                    data = response['data']['vo']
+                    self._log(f"会员购订单{order_id}物流获取成功, 状态为{data['state_v']}")
+                    return data
+                time.sleep(3)
+            self._log(f"会员购订单{order_id}物流获取失败 {response}")
+            return {}
+        
+        order_list = []
+        for order in get_order_list(status, type):
+            order_detail = get_order_detail(order['order_id'])
+            order_express = get_order_express(order['order_id']) if order_detail and order_detail['orderExpress'] else {}
+            order_list.append({
+                'id': order.get("order_id"),
+                'item': [{
+                    'id': item.get("itemsId"),
+                    'name': item.get("itemsName"),
+                    'spec': item.get("skuSpec"),
+                    'price': item.get("price"),
+                } for item in order_detail.get("skuList", [])],
+                'status': {
+                    'code': order.get("status"),
+                    'name': order.get("status_name"),
+                },
+                'pay': {
+                    'id': order_detail['orderBasic'].get("payId") if order_detail.get("orderBasic") else None,
+                    'channel': order_detail['orderBasic'].get("paymentChannel") if order_detail.get("orderBasic") else None,
+                    'total': order.get("show_money") / 100 if order.get("show_money") else None,
+                    'origin': order_detail['orderBasic'].get("payTotalMoney") if order_detail.get("orderBasic") else None,
+                    'discount': order_detail['orderBasic'].get("discountMoneys") if order_detail.get("orderBasic") else None,
+                    'express': order.get("express_fee") / 100 if order.get("express_fee") else None,
+                },
+                'preorder': {
+                    'phone': order_detail['extData'].get("notifyPhoneOrigin") if order_detail.get("extData") else None,
+                    'stage_1': {
+                        'total': order_detail['extData'].get("frontPayMoney") if order_detail.get("extData") else None,
+                        'origin': order_detail['extData'].get("frontMoney") if order_detail.get("extData") else None,
+                        'discount': order_detail['extData'].get("frontDisMoney") if order_detail.get("extData") else None,
+                    },
+                    'stage_2': {
+                        'total': order_detail['extData'].get("finalPayMoney") if order_detail.get("extData") else None,
+                        'origin': order_detail['extData'].get("finalMoney") if order_detail.get("extData") else None,
+                        'discount': order_detail['extData'].get("finalDisMoney") if order_detail.get("extData") else None,
+                        'time': [
+                            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order_detail['extData'].get("finalMoneyStart") / 1E3)) if order_detail.get("extData") and order_detail['extData'].get("finalMoneyStart") else None,
+                            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order_detail['extData'].get("finalMoneyEnd") / 1E3)) if order_detail.get("extData") and order_detail['extData'].get("finalMoneyStart") else None,
+                        ],
+                    },
+                },
+                'shipping': {
+                    'name': order_detail['orderDeliver'].get("deliverName") if order_detail.get("orderDeliver") else None,
+                    'phone': order_detail['orderDeliver'].get("deliverPhone") if order_detail.get("orderDeliver") else None,
+                    'address': order_detail['orderDeliver'].get("deliverAddr") if order_detail.get("orderDeliver") else None,
+                    'company': order_detail['orderExpress'].get("com_v") if order_detail.get("orderExpress") else None,
+                    'tracking_number': order_detail['orderExpress'].get("sno") if order_detail.get("orderExpress") else None,
+                    'status': order_express.get("state_v"),
+                    'detail': order_express.get("detail"),
+                },
+                'time': {
+                    'now': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order.get("current_timestamp"))) if order.get("current_timestamp") else None,
+                    'create': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order.get("order_ctime"))) if order.get("current_timestamp") else None,
+                    'pay': order.get("pay_ctime") if order.get("pay_ctime") != "0000-00-00 00:00:00" else None,
+                },
+            })
+        self.__push_to_queue("mall_order_list", order_list)
+        return order_list
 
-    # 会员购周年庆活动中奖查询
-    def mall_prize(self):
-        url = f"{self.protocol}://mall.bilibili.com/activity/lucky_draw_record/my_lucky_draw_list?gameId=3"
+    # 会员购奖品列表查询
+    def mall_prize_list(self, status=0, type=[1, 2]):
+        # status = 奖品状态
+        # type = 奖品类型
         headers = {
-            'Host': "mall.bilibili.com",
-            'Origin': "https://www.bilibili.com",
-            'Referer': "https://www.bilibili.com/blackboard/mall/activity-fySleoNP-.html",
+            'Referer': "https://mall.bilibili.com/prizecenter.html",
         }
-        response = self._requests("get", url, headers=headers)
-        if response and response.get("code") == 0:
-            self._log("会员购周年庆活动中奖查询成功")
-            prize_names = sorted([prize['prizeName'] for prize in response['data']['luckyDrawRecordDTOS']])
-            prizes = {}
-            for prize_name in prize_names:
-                prizes[prize_name] = prizes[prize_name] + 1 if prize_name in prizes else 1
-            for prize_name, prize_num in prizes.items():
-                self._log(f"{prize_name} x{prize_num}")
-            self._log(f"总计{len(prize_names)}件奖品")
-            return True
-        else:
-            self._log(f"会员购周年庆活动中奖查询失败 {response}")
-            return False
+        prizes = {}
+        page = 1
+        while True:
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/prize/list?pageNum={page}&pageSize=20&type={status}&v={int(time.time())}"
+            response = self._requests("get", url, headers=headers)
+            if response and response.get("code") == 0:
+                for prize in response['data']['pageInfo']['list']:
+                    if not type or prize['prizeType'] in type:
+                        prizes[prize['prizeName']] = prizes[prize['prizeName']] + 1 if prize['prizeName'] in prizes else 1
+                if response['data']['pageInfo']['hasNextPage']:
+                    page += 1
+                else:
+                    self._log(f"会员购奖品列表获取成功, 总计{len(prizes)}个奖品, {response['data']['waitDeliveryNum']}个奖品待发货")
+                    for prize_name, prize_num in sorted(prizes.items()):
+                        self._log(f"{prize_name} x{prize_num}")
+                    break
+            else:
+                self._log(f"会员购奖品列表获取失败 {response}")
+                break
+        prize_list = []
+        for name, number in prizes.items():
+            prize_list.append({
+                'name': name,
+                'number': number,
+            })
+        self.__push_to_queue("mall_prize_list", prize_list)
+        return prizes
+    
+    # 直播奖品列表查询
+    def live_prize_list(self):
+        headers = {
+            'Origin': "https://link.bilibili.com",
+            'Referer': "https://link.bilibili.com/p/center/index",
+        }
+        prize_list = []
+        page = 1
+        while True:
+            url = f"{self.protocol}://api.live.bilibili.com/lottery/v1/award/award_list?page={page}&month="
+            response = self._requests("get", url, headers=headers)
+            if response and response.get("code") == 0:
+                for prize in response['data']['list']:
+                    prize_list.append({
+                        'name': prize['gift_name'],
+                        'number': prize['gift_num'],
+                        'source': prize['source'],
+                        'time_span': [prize['create_time'], prize['expire_time']],
+                    })
+                if page < response['data']['total_page']:
+                    page += 1
+                else:
+                    self._log(f"直播奖品列表获取成功, 总计{len(prize_list)}个奖品")
+                    for prize in prize_list:
+                        self._log(f"{prize['name']} x{prize['number']}, 来自{prize['source']}, 领取有效期为{prize['time_span'][0]}至{prize['time_span'][1]}")
+                    break
+            else:
+                self._log(f"直播奖品列表获取失败 {response}")
+                break
+        self.__push_to_queue("live_prize_list", prize_list)
+        return prize_list
 
 def download(url, save_as=None):
     print(f"正在下载{url}")
@@ -1143,17 +1256,46 @@ def decompress(file, remove=True):
         os.remove(file)
     print(f"{file}解压完毕")
 
-def wrapper(args):
-    def delay_wrapper(func, interval, args_list=[()], shuffle=False):
+def export(queue, config):
+    bucket = {}
+    log_file = open(config['global']['log'], "a", encoding="utf-8") if config['global']['log'] else None
+    try:
+        while True:
+            packet = queue.get()
+            if isinstance(packet, dict) and all(key in packet for key in ['uid', 'manufacturer', 'data']):
+                if packet['manufacturer'] == "log":
+                    if log_file:
+                        log_file.write(packet['data'] + "\n")
+                else:
+                    if packet['manufacturer'] not in bucket:
+                        bucket[packet['manufacturer']] = {}
+                    if packet['uid'] not in bucket[packet['manufacturer']]:
+                        bucket[packet['manufacturer']][packet['uid']] = []
+                    if isinstance(packet['data'], list):
+                        bucket[packet['manufacturer']][packet['uid']].extend(packet['data'])
+                    else:
+                        bucket[packet['manufacturer']][packet['uid']].append(packet['data'])
+            elif packet is None:
+                for manufacturer, data in bucket.items():
+                    if config.get(manufacturer, {}).get("export"):
+                        with open(config[manufacturer]['export'], "w", encoding="utf-8") as f:
+                            f.write(json.dumps(data, indent=4, ensure_ascii=False))
+                return
+    finally:
+        if log_file:
+            log_file.close()
+
+def wrapper(arg):
+    def delay_wrapper(func, interval, arg_list=[()], shuffle=False):
         if shuffle:
-            random.shuffle(args_list)
-        for i in range(len(args_list)):
-            func(*args_list[i])
-            if i < len(args_list) - 1:
+            random.shuffle(arg_list)
+        for i in range(len(arg_list)):
+            func(*arg_list[i])
+            if i < len(arg_list) - 1:
                 time.sleep(interval)
 
-    config, account = args['config'], args['account']
-    instance = Bilibili(config['global']['https'])
+    config, account, queue = arg['config'], arg['account'], arg['queue']
+    instance = Bilibili(config['global']['https'], queue)
     if config['proxy']['enable']:
         if isinstance(config['proxy']['pool'], str):
             try:
@@ -1163,7 +1305,7 @@ def wrapper(args):
                 pass
         elif isinstance(config['proxy']['pool'], list):
             instance.set_proxy(add=config['proxy']['pool'])
-    if instance.login(account):
+    if instance.login(**account):
         threads = []
         if config['get_user_info']['enable']:
             threads.append(threading.Thread(target=instance.get_user_info))
@@ -1190,27 +1332,29 @@ def wrapper(args):
         if config['comment_like']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_like, 5, list(zip(config['comment_like']['otype'], config['comment_like']['oid'], config['comment_like']['rpid'])))))
         if config['comment_post']['enable']:
-            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_post, 5, list(zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical'])))))
-            # for comment in zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'], config['comment_post']['floor'], config['comment_post']['critical']):
-            #     threads.append(threading.Thread(target=instance.comment_post, args=(comment[0], comment[1], comment[2], comment[3], comment[4])))
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.comment_post, 5, list(zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message'])))))
+            # for comment in zip(config['comment_post']['otype'], config['comment_post']['oid'], config['comment_post']['message']):
+            #     threads.append(threading.Thread(target=instance.comment_post, args=(comment[0], comment[1], comment[2])))
         if config['dynamic_like']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_like, 5, list(zip(config['dynamic_like']['did'])))))
         if config['dynamic_repost']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.dynamic_repost, 5, list(zip(config['dynamic_repost']['did'], config['dynamic_repost']['message'], config['dynamic_repost']['ats'])))))
         if config['dynamic_purge']['enable']:
             threads.append(threading.Thread(target=instance.dynamic_purge))
+        if config['system_notice']['enable']:
+            threads.append(threading.Thread(target=instance.system_notice, args=(config['system_notice']['time_span'], config['system_notice']['keyword'])))
         if config['mall_rush']['enable']:
             for item in zip(config['mall_rush']['item_id'], config['mall_rush']['thread']):
                 threads.append(threading.Thread(target=instance.mall_rush, args=(item[0], item[1], config['mall_rush']['headless'], config['mall_rush']['timeout'])))
         if config['mall_coupon']['enable']:
             for coupon in zip(config['mall_coupon']['coupon_id'], config['mall_coupon']['thread']):
                 threads.append(threading.Thread(target=instance.mall_coupon, args=(coupon[0], coupon[1])))
-        if config['mall_sign']['enable']:
-            threads.append(threading.Thread(target=instance.mall_sign))
-        if config['mall_lottery']['enable']:
-            threads.append(threading.Thread(target=instance.mall_lottery))
-        if config['mall_prize']['enable']:
-            threads.append(threading.Thread(target=instance.mall_prize))
+        if config['mall_order_list']['enable']:
+            threads.append(threading.Thread(target=instance.mall_order_list, args=(config['mall_order_list']['status'], config['mall_order_list']['type'])))
+        if config['mall_prize_list']['enable']:
+            threads.append(threading.Thread(target=instance.mall_prize_list, args=(config['mall_prize_list']['status'], config['mall_prize_list']['type'])))
+        if config['live_prize_list']['enable']:
+            threads.append(threading.Thread(target=instance.live_prize_list))
         # instance._log("任务开始执行")
         for thread in threads:
             thread.start()
@@ -1270,123 +1414,48 @@ def main():
                 os.system(f"{prefix}yum -y install chromedriver")
         elif platform.system() == "Windows":
             if not os.path.exists("chrome-win\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/637110/chrome-win.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/674921/chrome-win.zip"))
             if not os.path.exists("chromedriver.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromedriver/2.46/chromedriver_win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromedriver/76.0.3809.68/chromedriver_win32.zip"))
         else:
             print("会员购抢购组件不支持在当前平台上运行")
             config['mall_rush']['enable'] = False
-    live_tool_process = None
-    if config['live_tool']['enable']:
-        if platform.system() == "Linux" and platform.machine() == "x86_64":
-            live_tool_support = True
-            live_tool_pkg = "bilibili-live-tool-linux-amd64.tar.gz"
-            live_tool_cwd = "./bilibili-live-tool-linux-amd64"
-            live_tool_exec = "./live"
-        elif platform.system() == "Linux" and "arm" in platform.machine():
-            live_tool_support = True
-            live_tool_pkg = "bilibili-live-tool-linux-arm.tar.gz"
-            live_tool_cwd = "./bilibili-live-tool-linux-arm"
-            live_tool_exec = "./live"
-        elif platform.system() == "Windows":
-            live_tool_support = True
-            live_tool_pkg = "bilibili-live-tool-windows.zip"
-            live_tool_cwd = "bilibili-live-tool-windows"
-            live_tool_exec = f"{live_tool_cwd}\\live.exe"
-        else:
-            live_tool_support = False
-            print("直播助手组件不支持在当前平台上运行")
-        if live_tool_support:
-            try:
-                with open(os.path.join(live_tool_cwd, "commit"), "r", encoding="utf-8") as f:
-                    live_tool_current_commit = f.read()
-            except:
-                live_tool_current_commit = None
-            live_tool_latest_commit = live_tool_current_commit if live_tool_current_commit else "b6d3fd0"
-            if config['live_tool']['auto_update']:
-                try:
-                    live_tool_latest_commit = requests.get("https://api.github.com/repos/Hsury/Bilibili-Live-Tool/releases/latest").json()['tag_name']
-                    if live_tool_current_commit and live_tool_current_commit != live_tool_latest_commit:
-                        print("发现新版本直播助手组件")
-                except:
-                    pass
-            if live_tool_current_commit != live_tool_latest_commit:
-                decompress(download(f"https://github.com/Hsury/Bilibili-Live-Tool/releases/download/{live_tool_latest_commit}/{live_tool_pkg}"))
-            live_tool_user = {'users': []}
-            for account in accounts:
-                live_tool_user['users'].append({
-                    'username': account.get("username", ""),
-                    'password': account.get("password", ""),
-                    'access_key': account.get("access_token", ""),
-                    'cookie': ";".join(f"{key}={value}" for key, value in account.items() if key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]),
-                    'csrf': account.get("bili_jct", ""),
-                    'uid': account.get("DedeUserID", ""),
-                    'refresh_token': account.get("refresh_token", ""),
-                })
-            with open(os.path.join(live_tool_cwd, "conf", "user.toml"), "w", encoding="utf-8") as f:
-                toml.dump(live_tool_user, f)
-            live_tool_ctrl = {
-                'print_control': {'danmu': config['live_tool']['print_danmaku']},
-                'task_control': {
-                    'clean-expiring-gift': config['live_tool']['give_expiring_gifts']['enable'],
-                    'set-expiring-time': config['live_tool']['give_expiring_gifts']['expiring_time'],
-                    'clean_expiring_gift2all_medal': config['live_tool']['give_expiring_gifts']['to_medal'],
-                    'clean-expiring-gift2room': config['live_tool']['give_expiring_gifts']['to_room'],
-                    'silver2coin': config['live_tool']['daily_silver_to_coin'],
-                    'send2wearing-medal': config['live_tool']['gain_intimacy']['enable'],
-                    'send2medal': config['live_tool']['gain_intimacy']['other_room'],
-                    'givecoin': config['live_tool']['daily_reward']['number'],
-                    'fetchrule': "uper" if config['live_tool']['daily_reward']['specific_up'] else "bilitop",
-                    'mid': config['live_tool']['daily_reward']['specific_up'],
-                },
-                'other_control': {
-                    'default_monitor_roomid': 23058,
-                    'raffle_minitor_roomid': 0,
-                    'area_ids': [1, 2, 3, 4, 5, 6],
-                },
-            }
-            with open(os.path.join(live_tool_cwd, "conf", "ctrl.toml"), "w", encoding="utf-8") as f:
-                toml.dump(live_tool_ctrl, f)
-            try:
-                live_tool_process = subprocess.Popen([live_tool_exec], cwd=live_tool_cwd)
-            except:
-                print("直播助手组件启动失败")
-    try:
-        with Pool(min(config['global']['process'], len(accounts))) as p:
-            result = p.map(wrapper, [{
-                'config': config,
-                'account': account,
-            } for account in accounts])
-            p.close()
-            p.join()
-        if config['user']['update']:
-            with open(config_file, "r+", encoding="utf-8") as f:
-                content = f.read()
-                before = content.split("account")[0]
-                after = content.split("account")[-1].split("\"\"\"")[-1]
-                f.seek(0)
-                f.truncate()
-                f.write(before)
-                f.write("account = \"\"\"\n")
-                for credential in result:
-                    new_line = False
-                    for key, value in credential.items():
-                        if value:
-                            if key == "cookie":
-                                f.write(f"{';'.join(f'{cookie}={value[cookie]}' for cookie in value)};")
-                            else:
-                                f.write(f"{key}={value};")
-                            new_line = True
-                    if new_line:
-                        f.write("\n")
-                f.write("\"\"\"")
-                f.write(after)
-            print("凭据已更新")
-        if live_tool_process:
-            live_tool_process.wait()
-    except:
-        if live_tool_process:
-            live_tool_process.terminate()
+    queue = Manager().Queue()
+    export_process = Process(target=export, args=(queue, config))
+    export_process.start()
+    with Pool(min(config['global']['process'], len(accounts))) as p:
+        result = p.map(wrapper, [{
+            'config': config,
+            'account': account,
+            'queue': queue,
+        } for account in accounts])
+        p.close()
+        p.join()
+    if config['user']['update']:
+        with open(config_file, "r+", encoding="utf-8") as f:
+            content = f.read()
+            before = content.split("account")[0]
+            after = content.split("account")[-1].split("\"\"\"")[-1]
+            f.seek(0)
+            f.truncate()
+            f.write(before)
+            f.write("account = \"\"\"\n")
+            for credential in result:
+                new_line = False
+                for key, value in credential.items():
+                    if value:
+                        if key == "cookie":
+                            f.write(f"{';'.join(f'{cookie}={value[cookie]}' for cookie in value)};")
+                        else:
+                            f.write(f"{key}={value};")
+                        new_line = True
+                if new_line:
+                    f.write("\n")
+            f.write("\"\"\"")
+            f.write(after)
+        print("凭据已更新")
+    queue.put(None)
+    export_process.join()
 
 if __name__ == "__main__":
     freeze_support()

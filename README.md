@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.3.13-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.8.3-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -32,18 +32,16 @@
 |follow              |2018/7/8       |关注                          |
 |danmaku_post        |2019/3/11      |弹幕发送                      |
 |comment_like        |2018/6/27      |评论点赞                      |
-|comment_post        |2019/3/5       |评论发表                      |
+|comment_post        |2019/8/3       |评论发表                      |
 |dynamic_like        |2018/6/29      |动态点赞                      |
 |dynamic_repost      |2019/3/11      |动态转发                      |
 |dynamic_purge       |2019/3/11      |动态清理                      |
+|system_notice       |2019/8/3       |系统通知查询                  |
 |mall_rush           |2018/9/24      |会员购抢购                    |
 |mall_coupon         |2019/3/3       |会员购优惠卷领取              |
-|mall_sign           |2018/9/19      |会员购周年庆活动签到          |
-|mall_lottery        |2018/9/24      |会员购周年庆活动扭蛋          |
-|mall_prize          |2018/9/19      |会员购周年庆活动中奖查询      |
-|live_tool           |2019/3/6       |直播助手                      |
-
-*注：周期性任务主要由live_tool组件执行，请前往[这里](https://github.com/Hsury/Bilibili-Live-Tool)以了解更多*
+|mall_order_list     |2019/8/3       |会员购订单列表查询            |
+|mall_prize_list     |2019/8/3       |会员购奖品列表查询            |
+|live_prize_list     |2019/8/3       |直播奖品列表查询              |
 
 ## 使用指南
 
@@ -102,8 +100,6 @@ QQ群：[956399361](https://jq.qq.com/?_wv=1027&k=5BO0c7o)
 本项目的灵感与使用到的部分API来自以下项目：
 
 > [czp3009/bilibili-api](https://github.com/czp3009/bilibili-api)
-
-> [yjqiang/bili2.0](https://github.com/yjqiang/bili2.0)
 
 ## 许可证
 

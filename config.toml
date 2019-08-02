@@ -2,6 +2,7 @@
 [global]
 https = true # 使用HTTPS协议
 process = 4 # 进程数
+log = "bilibili.log" # 日志文件名
 
 # 代理设置
 [proxy]
@@ -96,8 +97,6 @@ enable = false # 开关
 otype = ["video", "article"] # 作品类型(视频video; 活动activity; 相簿gallery; 文章article)
 oid = [120040, 328714] # 作品ID
 message = ["哔哩哔哩 (゜-゜)つロ 干杯~", "哔哩哔哩 (゜-゜)つロ 干杯~"] # 评论内容
-floor = [0, 0] # 目标楼层(为0则直接发表一条评论)
-critical = [3, 3] # 临界范围
 
 # 动态点赞
 [dynamic_like]
@@ -115,6 +114,13 @@ ats = [[2, 208259], [208259, 2]] # 被@用户UID列表
 [dynamic_purge]
 enable = false # 开关
 
+# 系统通知查询
+[system_notice]
+enable = false # 开关
+export = "system_notice.json" # 导出文件名
+time_span = ["2019-01-01 00:00:00", "2019-12-31 23:59:59"] # 时间范围
+keyword = ["中奖", "权益生效"] # 包含关键字
+
 # 会员购抢购
 [mall_rush]
 enable = false # 开关
@@ -129,38 +135,21 @@ enable = false # 开关
 coupon_id = ["df73652b539b1c6c", "f2a4f59ad6a1682f"] # 优惠券ID
 thread = [8, 8] # 线程数
 
-# 会员购周年庆活动签到
-[mall_sign]
+# 会员购订单列表查询
+[mall_order_list]
 enable = false # 开关
+export = "mall_order_list.json" # 导出文件名
+status = 0 # 订单状态(全部0; 待付款1; 待收货2; 待评价3; 待开补款4)
+type = [2] # 订单类型
 
-# 会员购周年庆活动扭蛋
-[mall_lottery]
+# 会员购奖品列表查询
+[mall_prize_list]
 enable = false # 开关
+export = "mall_prize_list.json" # 导出文件名
+status = 0 # 奖品状态(全部0; 待发货1; 已发货2; 无需发货3; 已失效4)
+type = [1, 2] # 奖品类型(实物类1; 虚拟类2)
 
-# 会员购周年庆活动中奖查询
-[mall_prize]
+# 直播奖品列表查询
+[live_prize_list]
 enable = false # 开关
-
-# 直播助手
-[live_tool]
-enable = false # 开关
-auto_update = true # 自动更新
-print_danmaku = false # 显示弹幕
-daily_silver_to_coin = false # 每日银瓜子兑换硬币
-
-# 每日自动投币
-[live_tool.daily_reward]
-number = 0 # 总投币枚数(为0则关闭该组件)
-specific_up = [] # 投给特定Up主(列表为空则随机投给排行榜上的Up主)
-
-# 投满当前佩戴勋章的亲密度
-[live_tool.gain_intimacy]
-enable = false # 开关
-other_room = [] # 其余勋章对应房间
-
-# 自动送出即将过期的直播礼物
-[live_tool.give_expiring_gifts]
-enable = false # 开关
-expiring_time = 0 # 过期倒计时
-to_medal = false # 投喂给勋章
-to_room = 5551309 # 投喂给房间
+export = "live_prize_list.json" # 导出文件名
