@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.8.3-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.8.4-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 </p>
 
@@ -40,6 +40,7 @@
 |mall_rush           |2018/9/24      |会员购抢购                    |
 |mall_coupon         |2019/3/3       |会员购优惠卷领取              |
 |mall_order_list     |2019/8/3       |会员购订单列表查询            |
+|mall_coupon_list    |2019/8/4       |会员购优惠卷列表查询          |
 |mall_prize_list     |2019/8/3       |会员购奖品列表查询            |
 |live_prize_list     |2019/8/3       |直播奖品列表查询              |
 

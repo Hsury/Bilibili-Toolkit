@@ -142,6 +142,12 @@ export = "mall_order_list.json" # 导出文件名
 status = 0 # 订单状态(全部0; 待付款1; 待收货2; 待评价3; 待开补款4)
 type = [2] # 订单类型
 
+# 会员购优惠券列表查询
+[mall_coupon_list]
+enable = false # 开关
+export = "mall_coupon_list.json" # 导出文件名
+status = 1 # 优惠券状态(未使用1; 已使用2; 已失效3)
+
 # 会员购奖品列表查询
 [mall_prize_list]
 enable = false # 开关

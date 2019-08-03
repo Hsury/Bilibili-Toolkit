@@ -39,7 +39,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.8.3"
+__version__ = "2019.8.4"
 
 class Bilibili:
     app_key = "1d8b6e7d45233436"
@@ -1072,7 +1072,7 @@ class Bilibili:
                 else:
                     self._log(f"会员购订单列表获取失败 {response}")
             return order_list
-        
+
         def get_order_detail(order_id):
             url = f"{self.protocol}://mall.bilibili.com/mall-c/order/detail?orderId={order_id}&platform=h5&time={int(time.time())}"
             headers = {
@@ -1087,7 +1087,7 @@ class Bilibili:
             else:
                 self._log(f"会员购订单{order_id}详情获取失败 {response}")
                 return {}
-        
+
         def get_order_express(order_id):
             url = f"{self.protocol}://mall.bilibili.com/mall-c/order/express/detail?orderId={order_id}"
             headers = {
@@ -1103,7 +1103,7 @@ class Bilibili:
                 time.sleep(3)
             self._log(f"会员购订单{order_id}物流获取失败 {response}")
             return {}
-        
+
         order_list = []
         for order in get_order_list(status, type):
             order_detail = get_order_detail(order['order_id'])
@@ -1116,12 +1116,14 @@ class Bilibili:
                     'spec': item.get("skuSpec"),
                     'price': item.get("price"),
                 } for item in order_detail.get("skuList", [])],
+                'create': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order.get("order_ctime"))) if order.get("current_timestamp") else None,
                 'status': {
                     'code': order.get("status"),
                     'name': order.get("status_name"),
                 },
                 'pay': {
                     'id': order_detail['orderBasic'].get("payId") if order_detail.get("orderBasic") else None,
+                    'time': order.get("pay_ctime") if order.get("pay_ctime") != "0000-00-00 00:00:00" else None,
                     'channel': order_detail['orderBasic'].get("paymentChannel") if order_detail.get("orderBasic") else None,
                     'total': order.get("show_money") / 100 if order.get("show_money") else None,
                     'origin': order_detail['orderBasic'].get("payTotalMoney") if order_detail.get("orderBasic") else None,
@@ -1130,19 +1132,17 @@ class Bilibili:
                 },
                 'preorder': {
                     'phone': order_detail['extData'].get("notifyPhoneOrigin") if order_detail.get("extData") else None,
-                    'stage_1': {
+                    'front': {
                         'total': order_detail['extData'].get("frontPayMoney") if order_detail.get("extData") else None,
                         'origin': order_detail['extData'].get("frontMoney") if order_detail.get("extData") else None,
                         'discount': order_detail['extData'].get("frontDisMoney") if order_detail.get("extData") else None,
                     },
-                    'stage_2': {
+                    'final': {
                         'total': order_detail['extData'].get("finalPayMoney") if order_detail.get("extData") else None,
                         'origin': order_detail['extData'].get("finalMoney") if order_detail.get("extData") else None,
                         'discount': order_detail['extData'].get("finalDisMoney") if order_detail.get("extData") else None,
-                        'time': [
-                            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order_detail['extData'].get("finalMoneyStart") / 1E3)) if order_detail.get("extData") and order_detail['extData'].get("finalMoneyStart") else None,
-                            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order_detail['extData'].get("finalMoneyEnd") / 1E3)) if order_detail.get("extData") and order_detail['extData'].get("finalMoneyStart") else None,
-                        ],
+                        'start': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order_detail['extData'].get("finalMoneyStart") / 1E3)) if order_detail.get("extData") and order_detail['extData'].get("finalMoneyStart") else None,
+                        'end': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order_detail['extData'].get("finalMoneyEnd") / 1E3)) if order_detail.get("extData") and order_detail['extData'].get("finalMoneyStart") else None,
                     },
                 },
                 'shipping': {
@@ -1150,18 +1150,59 @@ class Bilibili:
                     'phone': order_detail['orderDeliver'].get("deliverPhone") if order_detail.get("orderDeliver") else None,
                     'address': order_detail['orderDeliver'].get("deliverAddr") if order_detail.get("orderDeliver") else None,
                     'company': order_detail['orderExpress'].get("com_v") if order_detail.get("orderExpress") else None,
-                    'tracking_number': order_detail['orderExpress'].get("sno") if order_detail.get("orderExpress") else None,
+                    'number': order_detail['orderExpress'].get("sno") if order_detail.get("orderExpress") else None,
                     'status': order_express.get("state_v"),
                     'detail': order_express.get("detail"),
-                },
-                'time': {
-                    'now': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order.get("current_timestamp"))) if order.get("current_timestamp") else None,
-                    'create': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order.get("order_ctime"))) if order.get("current_timestamp") else None,
-                    'pay': order.get("pay_ctime") if order.get("pay_ctime") != "0000-00-00 00:00:00" else None,
                 },
             })
         self.__push_to_queue("mall_order_list", order_list)
         return order_list
+
+    # 会员购优惠券列表查询
+    def mall_coupon_list(self, status=1):
+        # status = 优惠券状态
+        status_map = {
+            1: "validList",
+            2: "usedList",
+            3: "invalidList",
+        }
+        if status not in status_map:
+            return []
+        headers = {
+            'Referer': "https://mall.bilibili.com/couponlist.html?noTitleBar=1",
+        }
+        coupon_list = []
+        page = 1
+        while True:
+            url = f"{self.protocol}://mall.bilibili.com/mall-c/coupon/list?status={status}&pageIndex={page}&pageSize=20"
+            response = self._requests("get", url, headers=headers)
+            if response and response.get("code") == 0:
+                if response['data'][status_map[status]]:
+                    for coupon in response['data'][status_map[status]]['list']:
+                        coupon_list.append({
+                            'name': coupon['couponCodeName'],
+                            'description': coupon['couponDesc'],
+                            'detail': coupon['couponDetail'],
+                            'discount': coupon['couponDiscount'],
+                            'status': coupon['status'],
+                            'type': coupon['couponCodeType'],
+                            'start': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(coupon['useStartTime'] / 1E3)) if coupon['useStartTime'] else None,
+                            'end': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(coupon['useEndTime'] / 1E3)) if coupon['useEndTime'] else None,
+                            'use': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(coupon['useTime'] / 1E3)) if coupon['useTime'] else None,
+                            'expire': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(coupon['expireDate'] / 1E3)) if coupon['expireDate'] else None,
+                        })
+                    if response['data'][status_map[status]]['hasNextPage']:
+                        page += 1
+                        continue
+                self._log(f"会员购优惠券列表获取成功, 总计{len(coupon_list)}张优惠券")
+                for coupon in coupon_list:
+                    self._log(f"会员购优惠券: {coupon['name']}" + (f", 失效时间为{coupon['expire']}" if coupon['expire'] else f", 使用时间为{coupon['use']}" if coupon['use'] else f", 使用有效期为{coupon['start']}至{coupon['end']}" if coupon['start'] and coupon['end'] else ""))
+                break
+            else:
+                self._log(f"会员购优惠券列表获取失败 {response}")
+                break
+        self.__push_to_queue("mall_coupon_list", coupon_list)
+        return coupon_list
 
     # 会员购奖品列表查询
     def mall_prize_list(self, status=0, type=[1, 2]):
@@ -1170,7 +1211,7 @@ class Bilibili:
         headers = {
             'Referer': "https://mall.bilibili.com/prizecenter.html",
         }
-        prizes = {}
+        prize_list = []
         page = 1
         while True:
             url = f"{self.protocol}://mall.bilibili.com/mall-c/prize/list?pageNum={page}&pageSize=20&type={status}&v={int(time.time())}"
@@ -1178,26 +1219,26 @@ class Bilibili:
             if response and response.get("code") == 0:
                 for prize in response['data']['pageInfo']['list']:
                     if not type or prize['prizeType'] in type:
-                        prizes[prize['prizeName']] = prizes[prize['prizeName']] + 1 if prize['prizeName'] in prizes else 1
+                        prize_list.append({
+                            'name': prize['prizeName'],
+                            'source': prize['sourceName'],
+                            'status': prize['status'],
+                            'type': prize['prizeType'],
+                            'expire': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(prize['expireTime'])),
+                        })
                 if response['data']['pageInfo']['hasNextPage']:
                     page += 1
                 else:
-                    self._log(f"会员购奖品列表获取成功, 总计{len(prizes)}个奖品, {response['data']['waitDeliveryNum']}个奖品待发货")
-                    for prize_name, prize_num in sorted(prizes.items()):
-                        self._log(f"{prize_name} x{prize_num}")
+                    self._log(f"会员购奖品列表获取成功, 总计{len(prize_list)}个奖品, {response['data']['waitDeliveryNum']}个奖品待发货")
+                    for prize in prize_list:
+                        self._log(f"会员购奖品: {prize['name']}, 来自{prize['source']}, 领取有效期至{prize['expire']}")
                     break
             else:
                 self._log(f"会员购奖品列表获取失败 {response}")
                 break
-        prize_list = []
-        for name, number in prizes.items():
-            prize_list.append({
-                'name': name,
-                'number': number,
-            })
         self.__push_to_queue("mall_prize_list", prize_list)
-        return prizes
-    
+        return prize_list
+
     # 直播奖品列表查询
     def live_prize_list(self):
         headers = {
@@ -1215,14 +1256,17 @@ class Bilibili:
                         'name': prize['gift_name'],
                         'number': prize['gift_num'],
                         'source': prize['source'],
-                        'time_span': [prize['create_time'], prize['expire_time']],
+                        'status': prize['status'],
+                        'type': prize['gift_type'],
+                        'create': prize['create_time'],
+                        'expire': prize['expire_time'],
                     })
                 if page < response['data']['total_page']:
                     page += 1
                 else:
                     self._log(f"直播奖品列表获取成功, 总计{len(prize_list)}个奖品")
                     for prize in prize_list:
-                        self._log(f"{prize['name']} x{prize['number']}, 来自{prize['source']}, 领取有效期为{prize['time_span'][0]}至{prize['time_span'][1]}")
+                        self._log(f"直播奖品: {prize['name']} x{prize['number']}, 来自{prize['source']}, 中奖时间为{prize['create']}, 领取有效期至{prize['expire']}")
                     break
             else:
                 self._log(f"直播奖品列表获取失败 {response}")
@@ -1351,6 +1395,8 @@ def wrapper(arg):
                 threads.append(threading.Thread(target=instance.mall_coupon, args=(coupon[0], coupon[1])))
         if config['mall_order_list']['enable']:
             threads.append(threading.Thread(target=instance.mall_order_list, args=(config['mall_order_list']['status'], config['mall_order_list']['type'])))
+        if config['mall_coupon_list']['enable']:
+            threads.append(threading.Thread(target=instance.mall_coupon_list, args=(config['mall_coupon_list']['status'],)))
         if config['mall_prize_list']['enable']:
             threads.append(threading.Thread(target=instance.mall_prize_list, args=(config['mall_prize_list']['status'], config['mall_prize_list']['type'])))
         if config['live_prize_list']['enable']:
