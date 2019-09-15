@@ -12,6 +12,7 @@ pool = "proxy.txt" # 代理池
 # 用户设置
 [user]
 update = true # 自动更新凭据
+force_refresh_token = true # 强制刷新Token
 account = """
 username=22娘;password=GodKnows;
 username=33娘;password=GodKnows;

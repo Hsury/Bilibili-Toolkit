@@ -19,6 +19,7 @@ banner = r"""
 """
 
 import base64
+import chardet
 import hashlib
 import json
 import os
@@ -39,7 +40,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.8.4"
+__version__ = "2019.9.15"
 
 class Bilibili:
     app_key = "1d8b6e7d45233436"
@@ -64,7 +65,7 @@ class Bilibili:
 
     def __init__(self, https=True, queue=None):
         self._session = requests.Session()
-        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.87 Safari/537.36"})
+        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36"})
         self.__queue = queue
         self.get_cookies = lambda: self._session.cookies.get_dict(domain=".bilibili.com")
         self.get_csrf = lambda: self.get_cookies().get("bili_jct", "")
@@ -82,7 +83,6 @@ class Bilibili:
                 'next': 0,
             },
             'face': "",
-            'join': "",
             'level': 0,
             'nickname': "",
         }
@@ -107,7 +107,7 @@ class Bilibili:
         return None
 
     def _solve_captcha(self, image):
-        url = "https://bili.dev/captcha"
+        url = "https://bili.dev:2233/captcha"
         payload = {'image': base64.b64encode(image).decode("utf-8")}
         response = self._requests("post", url, json=payload)
         return response['message'] if response and response.get("code") == 0 else None
@@ -154,39 +154,39 @@ class Bilibili:
                 self._log("Cookie已失效")
                 return False
 
-        def by_token():
-            param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&ts={int(time.time())}"
-            url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.calc_sign(param)}"
-            response = self._requests("get", url)
-            if response and response.get("code") == 0:
-                self._session.cookies.set('DedeUserID', str(response['data']['mid']), domain=".bilibili.com")
-                self._log(f"Token仍有效, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['expires_in'])))}")
-                param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&gourl={self.protocol}%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
-                url = f"{self.protocol}://passport.bilibili.com/api/login/sso?{param}&sign={self.calc_sign(param)}"
-                self._requests("get", url, decode_level=0)
-                if all(key in self.get_cookies() for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]):
-                    self._log("Cookie获取成功")
-                    return True
-                else:
-                    self._log("Cookie获取失败")
-            else:
-                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/refresh_token"
-                param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&refresh_token={self.refresh_token}&ts={int(time.time())}"
-                payload = f"{param}&sign={self.calc_sign(param)}"
-                headers = {'Content-type': "application/x-www-form-urlencoded"}
-                response = self._requests("post", url, data=payload, headers=headers)
+        def by_token(force_refresh=False):
+            if not force_refresh:
+                param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&ts={int(time.time())}"
+                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/info?{param}&sign={self.calc_sign(param)}"
+                response = self._requests("get", url)
                 if response and response.get("code") == 0:
-                    for cookie in response['data']['cookie_info']['cookies']:
-                        self._session.cookies.set(cookie['name'], cookie['value'], domain=".bilibili.com")
-                    self.access_token = response['data']['token_info']['access_token']
-                    self.refresh_token = response['data']['token_info']['refresh_token']
-                    self._log(f"Token刷新成功, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['token_info']['expires_in'])))}")
-                    return True
-                else:
-                    self.access_token = ""
-                    self.refresh_token = ""
-                    self._log("Token刷新失败")
-            return False
+                    self._session.cookies.set('DedeUserID', str(response['data']['mid']), domain=".bilibili.com")
+                    self._log(f"Token仍有效, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['expires_in'])))}")
+                    param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&gourl={self.protocol}%3A%2F%2Faccount.bilibili.com%2Faccount%2Fhome&ts={int(time.time())}"
+                    url = f"{self.protocol}://passport.bilibili.com/api/login/sso?{param}&sign={self.calc_sign(param)}"
+                    self._requests("get", url, decode_level=0)
+                    if all(key in self.get_cookies() for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]):
+                        self._log("Cookie获取成功")
+                        return True
+                    else:
+                        self._log("Cookie获取失败")
+            url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/refresh_token"
+            param = f"access_key={self.access_token}&appkey={Bilibili.app_key}&refresh_token={self.refresh_token}&ts={int(time.time())}"
+            payload = f"{param}&sign={self.calc_sign(param)}"
+            headers = {'Content-type': "application/x-www-form-urlencoded"}
+            response = self._requests("post", url, data=payload, headers=headers)
+            if response and response.get("code") == 0:
+                for cookie in response['data']['cookie_info']['cookies']:
+                    self._session.cookies.set(cookie['name'], cookie['value'], domain=".bilibili.com")
+                self.access_token = response['data']['token_info']['access_token']
+                self.refresh_token = response['data']['token_info']['refresh_token']
+                self._log(f"Token刷新成功, 有效期至{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + int(response['data']['token_info']['expires_in'])))}")
+                return True
+            else:
+                self.access_token = ""
+                self.refresh_token = ""
+                self._log("Token刷新失败")
+                return False
 
         def by_password():
             def get_key():
@@ -259,9 +259,10 @@ class Bilibili:
         self.refresh_token = kwargs.get("refresh_token", "")
         self.username = kwargs.get("username", "")
         self.password = kwargs.get("password", "")
-        if all(key in self.get_cookies() for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) and by_cookie():
+        force_refresh_token = kwargs.get("force_refresh_token", False)
+        if (not force_refresh_token or not self.access_token or not self.refresh_token) and all(key in self.get_cookies() for key in ["bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid", "SESSDATA"]) and by_cookie():
             return True
-        elif self.access_token and self.refresh_token and by_token():
+        elif self.access_token and self.refresh_token and by_token(force_refresh_token):
             return True
         elif self.username and self.password and by_password():
             return True
@@ -283,10 +284,9 @@ class Bilibili:
             self.info['experience']['current'] = response['data']['level_exp']['current_exp']
             self.info['experience']['next'] = response['data']['level_exp']['next_exp']
             self.info['face'] = response['data']['face']
-            self.info['join'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(response['data']['jointime']))
             self.info['level'] = response['data']['level']
             self.info['nickname'] = response['data']['name']
-            self._log(f"{self.info['nickname']}(UID={self.get_uid()}), Lv.{self.info['level']}({self.info['experience']['current']}/{self.info['experience']['next']}), 拥有{self.info['coins']}枚硬币, 注册于{self.info['join']}, 账号{'状态正常' if not self.info['ban'] else '被封禁'}")
+            self._log(f"{self.info['nickname']}(UID={self.get_uid()}), Lv.{self.info['level']}({self.info['experience']['current']}/{self.info['experience']['next']}), 拥有{self.info['coins']}枚硬币, 账号{'状态正常' if not self.info['ban'] else '被封禁'}")
             return True
         else:
             self._log("用户信息获取失败")
@@ -921,7 +921,7 @@ class Bilibili:
             in_stock = False
             while True:
                 try:
-                    result = {class_name: find_and_click(class_name) for class_name in ["bottom-buy-button", "button", "confrim-close", "pay-btn", "expire-time-format", "alert-ok", "error-button"]}
+                    result = {class_name: find_and_click(class_name) for class_name in ["bottom-buy-button", "button", "dot", "pay-btn", "expire-time-format", "alert-ok", "error-button"]}
                     if result['bottom-buy-button']:
                         if "bottom-buy-disable" not in result['bottom-buy-button'].get_attribute("class"):
                             if not in_stock:
@@ -1114,6 +1114,7 @@ class Bilibili:
                     'id': item.get("itemsId"),
                     'name': item.get("itemsName"),
                     'spec': item.get("skuSpec"),
+                    'number': item.get("skuNum"),
                     'price': item.get("price"),
                 } for item in order_detail.get("skuList", [])],
                 'create': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(order.get("order_ctime"))) if order.get("current_timestamp") else None,
@@ -1274,6 +1275,15 @@ class Bilibili:
         self.__push_to_queue("live_prize_list", prize_list)
         return prize_list
 
+def detect_charset(file, fallback="utf-8"):
+    with open(file, "rb") as f:
+        detector = chardet.UniversalDetector()
+        for line in f.readlines():
+            detector.feed(line)
+            if detector.done:
+                return detector.result['encoding']
+    return fallback
+
 def download(url, save_as=None):
     print(f"正在下载{url}")
     if save_as is None:
@@ -1343,13 +1353,13 @@ def wrapper(arg):
     if config['proxy']['enable']:
         if isinstance(config['proxy']['pool'], str):
             try:
-                with open(config['proxy']['pool'], "r", encoding="utf-8") as f:
+                with open(config['proxy']['pool'], "r", encoding=detect_charset(config['proxy']['pool'])) as f:
                     instance.set_proxy(add=[proxy for proxy in f.read().strip().splitlines() if proxy and proxy[0] != "#"])
             except:
                 pass
         elif isinstance(config['proxy']['pool'], list):
             instance.set_proxy(add=config['proxy']['pool'])
-    if instance.login(**account):
+    if instance.login(force_refresh_token=config['user']['force_refresh_token'], **account):
         threads = []
         if config['get_user_info']['enable']:
             threads.append(threading.Thread(target=instance.get_user_info))
@@ -1419,7 +1429,8 @@ def main():
     print(f"{banner}\n{__doc__}\n版本: {__version__}\n")
     config_file = sys.argv[1] if len(sys.argv) > 1 else "config.toml"
     try:
-        config = toml.load(config_file)
+        with open(config_file, "r", encoding=detect_charset(config_file)) as f:
+            config = toml.load(f)
     except:
         print(f"无法加载{config_file}")
         return
@@ -1460,9 +1471,9 @@ def main():
                 os.system(f"{prefix}yum -y install chromedriver")
         elif platform.system() == "Windows":
             if not os.path.exists("chrome-win\\chrome.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/674921/chrome-win.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromium-browser-snapshots/Win/686378/chrome-win.zip"))
             if not os.path.exists("chromedriver.exe"):
-                decompress(download("https://npm.taobao.org/mirrors/chromedriver/76.0.3809.68/chromedriver_win32.zip"))
+                decompress(download("https://npm.taobao.org/mirrors/chromedriver/78.0.3904.11/chromedriver_win32.zip"))
         else:
             print("会员购抢购组件不支持在当前平台上运行")
             config['mall_rush']['enable'] = False
@@ -1478,7 +1489,7 @@ def main():
         p.close()
         p.join()
     if config['user']['update']:
-        with open(config_file, "r+", encoding="utf-8") as f:
+        with open(config_file, "r+", encoding=detect_charset(config_file)) as f:
             content = f.read()
             before = content.split("account")[0]
             after = content.split("account")[-1].split("\"\"\"")[-1]
@@ -1491,7 +1502,7 @@ def main():
                 for key, value in credential.items():
                     if value:
                         if key == "cookie":
-                            f.write(f"{';'.join(f'{cookie}={value[cookie]}' for cookie in value)};")
+                            f.write(f"{';'.join(f'{key}={value}' for key, value in value.items())};")
                         else:
                             f.write(f"{key}={value};")
                         new_line = True

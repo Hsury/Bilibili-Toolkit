@@ -1,0 +1,5 @@
+chardet
+requests
+rsa
+selenium
+toml
