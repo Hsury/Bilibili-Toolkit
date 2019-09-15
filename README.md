@@ -56,7 +56,7 @@ cd Bilibili-Toolkit
 nano config.toml
 ```
 
-2. 安装Python 3.6/3.7, 并使用pip安装依赖
+2. 安装Python 3.6/3.7，并使用pip安装依赖
 
 ```
 pip install -r requirements.txt -U
@@ -72,7 +72,7 @@ python bilibili.py
 
 从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件config.toml后运行可执行文件bilibili即可
 
-*若要加载非默认配置文件, 将其路径作为命令行参数传入即可*
+*若要加载非默认配置文件，将其路径作为命令行参数传入即可*
 
 ## 图形验证码识别API
 
