@@ -5,8 +5,9 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.9.15-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.11.30-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/travis/com/Hsury/Bilibili-Toolkit?style=for-the-badge">
 </p>
 
 <h4 align="center">🛠️ 哔哩哔哩（B站）辅助工具箱，支持Cookie/Token/Password融合持久化登录与多用户操作</h4>
@@ -59,7 +60,7 @@ nano config.toml
 2. 安装Python 3.6/3.7，并使用pip安装依赖
 
 ```
-pip install -r requirements.txt -U
+pip install -r requirements.txt -U -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 3. 启动脚本
