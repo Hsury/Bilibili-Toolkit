@@ -12,7 +12,9 @@ RUN apk add --no-cache --virtual bili git build-base python-dev py-pip jpeg-dev 
     rm -r /var/cache/apk && \
     rm -r /usr/share/man && \
     apk del bili && \
-    apk add --no-cache libjpeg-turbo git
+    apk add --no-cache libjpeg-turbo git tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
 
 # DEV
 #RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && \
@@ -22,7 +24,9 @@ RUN apk add --no-cache --virtual bili git build-base python-dev py-pip jpeg-dev 
 #    rm -r /var/cache/apk && \
 #    rm -r /usr/share/man && \
 #    apk del bili && \
-#    apk add --no-cache libjpeg-turbo git
+#    apk add --no-cache libjpeg-turbo git tzdata && \
+#    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+#    echo "Asia/Shanghai" > /etc/timezone
 
 CMD git pull && \
     pip install --no-cache-dir -r requirements.txt -U -i https://pypi.tuna.tsinghua.edu.cn/simple && \
