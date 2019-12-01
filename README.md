@@ -75,6 +75,83 @@ python bilibili.py
 
 *若要加载非默认配置文件，将其路径作为命令行参数传入即可*
 
+### docker版本
+
+1. 安装好[Docker](https://yeasy.gitbooks.io/docker_practice/content/install/)
+2. 下载 [config.toml](https://raw.githubusercontent.com/Hsury/Bilibili-Toolkit/master/config.toml) **必须**
+3. 如果需要代理，需要下载 [proxy.txt](https://raw.githubusercontent.com/Hsury/Bilibili-Toolkit/master/proxy.txt) **非必须**
+5. 在本地修改好文件。
+6. docker镜像启动时，把文件挂载到容器即可。
+
+---
+
+#### Linux
+
+```
+docker run --rm -it \
+  -v $(pwd)/config.toml:/app/config.toml \
+  -v $(pwd)/proxy.txt:/app/proxy.txt zsnmwy/bilibili-toolkit
+```
+
+```shell script
+# 如果你没有配置代理。请自行移除 
+
+-v $(pwd)/proxy.txt:/app/proxy.txt
+
+# 即不做该文件的映射
+```
+
+`$(pwd)` 获取当前目录路径。
+
+#### Windows
+
+假设下载的文件都在`D:\python`。
+
+```
+下面命令需要在powershell上面执行。
+
+docker run --rm -it `
+  -v D:\python\config.toml:/app/config.toml `
+  -v D:\python\proxy.txt:/app/proxy.txt `
+  zsnmwy/bilibili-toolkit
+
+如果你没有配置代理。请自行移除
+
+-v D:\python\proxy.txt:/app/proxy.txt
+```
+---
+
+下面的指令都是docker本身的指令，适用于`Windows`以及`Linux`。
+
+`--rm` 退出的时候，会把容器删除。
+
+`-i` 让容器的标准输入保持打开。
+
+`-t` 让Docker分配一个伪终端（pseudo-tty）并绑定到容器的标准输入上。
+
+`-d `让容器后台运行。如果你想后台，加个在`-it`后面加个`d`就行。
+
+`-v` 可以把本机的(目录/文件)挂载到容器里面，起到加入/替换的作用。如果你使用的是项目的默认值，则不用-v来指定文件替换。但是配置文件（`config.toml`）是一定要的，不然程序找不到用户的。
+
+---
+
+如果有什么奇葩问题，或者需要更新镜像，使用`docker pull zsnmwy/bilibili-toolkit`进行更新（保证不更新）。
+
+### 已知问题
+
+在`-it`交互模式下，在容器运行着的python直接用`Ctrl+C`无法正常退出容器。
+
+需要使用`docker rm -f`强制结束。
+
+```
+$docker ps
+CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS              PORTS               NAMES
+a746fb0325fb        zsnmwy/bilibili-toolkit      "/bin/sh -c 'git pul…"   44 seconds ago      Up 42 seconds                           frosty_mccarthy
+
+$docker rm -f a7
+a7
+```
+
 ## 图形验证码识别API
 
 使用CNN卷积神经网络构建，已实现对**登录、评论**验证码的自适应识别
