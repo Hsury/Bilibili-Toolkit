@@ -40,7 +40,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.11.30"
+__version__ = "2019.12.6"
 
 class Bilibili:
     app_key = "1d8b6e7d45233436"
@@ -208,7 +208,7 @@ class Bilibili:
             while True:
                 key = get_key()
                 key_hash, pub_key = key['key_hash'], key['pub_key']
-                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
+                url = f"{self.protocol}://passport.bilibili.com/api/v3/oauth2/login"
                 param = f"appkey={Bilibili.app_key}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{key_hash}{self.password}'.encode(), pub_key)))}&username={parse.quote_plus(self.username)}"
                 payload = f"{param}&sign={self.calc_sign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
@@ -234,6 +234,9 @@ class Bilibili:
                                 if not self.set_proxy():
                                     time.sleep(10)
                                 break
+                        elif response['code'] == -449:
+                            time.sleep(1)
+                            response = self._requests("post", url, data=payload, headers=headers)
                         elif response['code'] == 0 and response['data']['status'] == 0:
                             for cookie in response['data']['cookie_info']['cookies']:
                                 self._session.cookies.set(cookie['name'], cookie['value'], domain=".bilibili.com")
