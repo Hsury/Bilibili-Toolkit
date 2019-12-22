@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.12.6-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2019.12.22-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/travis/com/Hsury/Bilibili-Toolkit?style=for-the-badge">
 </p>
@@ -20,7 +20,7 @@
 
 |组件                |版本           |描述                          |
 |--------------------|---------------|------------------------------|
-|login               |2019/12/6      |登录                          |
+|login               |2019/12/22     |登录                          |
 |get_user_info       |2019/9/15      |获取用户信息                  |
 |set_privacy         |2018/7/24      |修改隐私设置                  |
 |silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |

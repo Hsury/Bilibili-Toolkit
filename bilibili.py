@@ -40,7 +40,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.12.6"
+__version__ = "2019.12.22"
 
 class Bilibili:
     app_key = "1d8b6e7d45233436"
@@ -65,7 +65,7 @@ class Bilibili:
 
     def __init__(self, https=True, queue=None):
         self._session = requests.Session()
-        self._session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"})
+        self._session.headers.update({'User-Agent': "Mozilla/5.0 BiliDroid/5.51.1 (bbcallen@gmail.com)"})
         self.__queue = queue
         self.get_cookies = lambda: self._session.cookies.get_dict(domain=".bilibili.com")
         self.get_csrf = lambda: self.get_cookies().get("bili_jct", "")
@@ -208,7 +208,7 @@ class Bilibili:
             while True:
                 key = get_key()
                 key_hash, pub_key = key['key_hash'], key['pub_key']
-                url = f"{self.protocol}://passport.bilibili.com/api/v3/oauth2/login"
+                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
                 param = f"appkey={Bilibili.app_key}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{key_hash}{self.password}'.encode(), pub_key)))}&username={parse.quote_plus(self.username)}"
                 payload = f"{param}&sign={self.calc_sign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
