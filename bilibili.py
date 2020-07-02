@@ -578,6 +578,31 @@ class Bilibili:
         else:
             self._log(f"用户{mid}{'悄悄' if secret else ''}关注失败 {response}")
             return False
+    
+    # 批量关注
+    def batchfollow(self, mids, secret=False):
+        # mids = 被关注用户UID
+        # secret = 悄悄关注
+        url = f"{self.protocol}://api.bilibili.com/x/relation/batch/modify"
+        
+        payload = {
+            'fids': ','.join(map(str,[c for c in mids if c])),
+            'act': 3 if secret else 1,
+            'csrf': self.get_csrf(),
+            're_src': 222 # from https://www.bilibili.com/blackboard/live/activity-NfUS01P8.html
+        }
+        headers = {
+            'Host': "api.bilibili.com",
+            #'Origin': "https://www.bilibili.com",
+            'Referer': "https://www.bilibili.com/blackboard/live/activity-NfUS01P8.html",
+        }
+        response = self._requests("post", url, data=payload, headers=headers)
+        if response and response.get("code") == 0:
+            self._log(f"批量{'悄悄' if secret else ''}关注成功 {response}")
+            return True
+        else:
+            self._log(f"批量{'悄悄' if secret else ''}关注失败 {response}")
+            return False
 
     # 弹幕发送
     def danmaku_post(self, aid, message, page=1, moment=-1):
@@ -1382,6 +1407,10 @@ def wrapper(arg):
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.combo, 5, list(zip(config['combo']['aid'])))))
         if config['share']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.share, 5, list(zip(config['share']['aid'])))))
+        if config['batchfollow']['enable']:
+            groups = list(grouper(config['batchfollow']['mid'], 50)) # 最多只能50个，否则会服务器报错数据格式错误
+            args = [(c, config['batchfollow']['secret']) for c in groups]
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.batchfollow, 5, args)))
         if config['follow']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow, 5, list(zip(config['follow']['mid'], config['follow']['secret'])))))
         if config['danmaku_post']['enable']:
