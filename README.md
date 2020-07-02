@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2019.12.22-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2020.7.2-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/travis/com/Hsury/Bilibili-Toolkit?style=for-the-badge">
 </p>
@@ -31,6 +31,7 @@
 |combo               |2018/12/18     |三连推荐                      |
 |share               |2018/6/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
+|follow_batch        |2020/7/2       |批量关注                      |
 |danmaku_post        |2019/3/11      |弹幕发送                      |
 |comment_like        |2018/6/27      |评论点赞                      |
 |comment_post        |2019/8/3       |评论发表                      |

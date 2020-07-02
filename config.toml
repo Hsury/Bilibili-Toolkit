@@ -78,10 +78,9 @@ mid = [2, 208259] # 被关注用户UID
 secret = [true, false] # 悄悄关注
 
 # 批量关注
-[batchfollow]
+[follow_batch]
 enable = false # 开关
 mid = [2, 208259] # 被关注用户UID
-secret = false # 悄悄关注
 
 # 弹幕发送
 [danmaku_post]
