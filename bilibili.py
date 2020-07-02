@@ -40,7 +40,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2019.12.22"
+__version__ = "2020.7.2"
 
 class Bilibili:
     app_key = "1d8b6e7d45233436"
@@ -577,6 +577,28 @@ class Bilibili:
             return True
         else:
             self._log(f"用户{mid}{'悄悄' if secret else ''}关注失败 {response}")
+            return False
+
+    # 批量关注
+    def follow_batch(self, mids):
+        # mids = 被关注用户UID
+        url = f"{self.protocol}://api.bilibili.com/x/relation/batch/modify"
+        payload = {
+            'fids': ",".join(map(str, mids)),
+            'act': 1,
+            'csrf': self.get_csrf(),
+            're_src': 222,
+        }
+        headers = {
+            'Host': "api.bilibili.com",
+            'Referer': "https://www.bilibili.com/blackboard/live/activity-NfUS01P8.html",
+        }
+        response = self._requests("post", url, data=payload, headers=headers)
+        if response and response.get("code") == 0:
+            self._log(f"用户{', '.join(map(str, mids))}批量关注成功")
+            return True
+        else:
+            self._log(f"用户{', '.join(map(str, mids))}批量关注失败 {response}")
             return False
 
     # 弹幕发送
@@ -1384,6 +1406,8 @@ def wrapper(arg):
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.share, 5, list(zip(config['share']['aid'])))))
         if config['follow']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow, 5, list(zip(config['follow']['mid'], config['follow']['secret'])))))
+        if config['follow_batch']['enable']:
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow_batch, 5, list((config['follow_batch']['mid'][i:i + 50],) for i in range(0, len(config['follow_batch']['mid']), 50)))))
         if config['danmaku_post']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.danmaku_post, 5, list(zip(config['danmaku_post']['aid'], config['danmaku_post']['message'], config['danmaku_post']['page'], config['danmaku_post']['moment'])))))
         if config['comment_like']['enable']:
