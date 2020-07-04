@@ -40,10 +40,10 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2020.7.2"
+__version__ = "2020.7.4"
 
 class Bilibili:
-    app_key = "1d8b6e7d45233436"
+    app_key = "bca7e84c2d947ac6"
     patterns = {
         'video': {
             'id': 1,
@@ -65,7 +65,7 @@ class Bilibili:
 
     def __init__(self, https=True, queue=None):
         self._session = requests.Session()
-        self._session.headers.update({'User-Agent': "Mozilla/5.0 BiliDroid/5.51.1 (bbcallen@gmail.com)"})
+        self._session.headers.update({'User-Agent': "Mozilla/5.0 BiliDroid/6.4.0 (bbcallen@gmail.com) os/android model/M1903F11I mobi_app/android build/6040500 channel/bili innerVer/6040500 osVer/9.0.0 network/2"})
         self.__queue = queue
         self.get_cookies = lambda: self._session.cookies.get_dict(domain=".bilibili.com")
         self.get_csrf = lambda: self.get_cookies().get("bili_jct", "")
@@ -123,7 +123,7 @@ class Bilibili:
 
     @staticmethod
     def calc_sign(param):
-        salt = "560c52ccd288fed045859ed18bffd973"
+        salt = "60698ba2f68e01ce44738920a0ffe768"
         sign_hash = hashlib.md5()
         sign_hash.update(f"{param}{salt}".encode())
         return sign_hash.hexdigest()
@@ -235,7 +235,11 @@ class Bilibili:
                                     time.sleep(10)
                                 break
                         elif response['code'] == -449:
-                            time.sleep(1)
+                            self._log("服务繁忙, 尝试使用V3接口登录")
+                            url = f"{self.protocol}://passport.bilibili.com/api/v3/oauth2/login"
+                            param = f"access_key=&actionKey=appkey&appkey={Bilibili.app_key}&build=6040500&captcha=&challenge=&channel=bili&cookies=&device=phone&mobi_app=android&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{key_hash}{self.password}'.encode(), pub_key)))}&permission=ALL&platform=android&seccode=&subid=1&ts={int(time.time())}&username={parse.quote_plus(self.username)}&validate="
+                            payload = f"{param}&sign={self.calc_sign(param)}"
+                            headers = {'Content-type': "application/x-www-form-urlencoded"}
                             response = self._requests("post", url, data=payload, headers=headers)
                         elif response['code'] == 0 and response['data']['status'] == 0:
                             for cookie in response['data']['cookie_info']['cookies']:
