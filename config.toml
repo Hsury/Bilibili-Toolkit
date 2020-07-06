@@ -43,7 +43,7 @@ enable = false # 开关
 # 观看
 [watch]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
+aid = ['BV17x411w7KC','BV1xx411c7RA'] # 稿件bv号,要么全是av号，要么全是bv号,下面的也一样
 
 # 点赞
 [like]

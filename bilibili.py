@@ -33,6 +33,7 @@ import sys
 import threading
 import time
 import toml
+import functools
 from multiprocessing import freeze_support, Manager, Pool, Process
 from selenium import webdriver
 from urllib import parse
@@ -380,7 +381,40 @@ class Bilibili:
             else:
                 self._log(f"银瓜子兑换硬币(PC通道)失败 {response}")
 
+    def is_bv(func):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(self, *args, **kw):
+                args = list(args)
+                if type(args[0]) == str and args[0][0:2] == 'BV':
+                    args[0] = self.decode_bv(args[0])
+                args = tuple(args)
+                return func(self, *args, **kw)
+            return wrapper
+        return decorator(func)
+    """
+    作者：mcfx
+    链接：https://www.zhihu.com/question/381784377/answer/1099438784
+    来源：知乎
+    著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。    
+    """
+    def decode_bv(self, bvid):
+        table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+        tr = {}
+        xor=177451812
+        add=8728348608
+
+        for i in range(58):
+            tr[table[i]] = i
+            s = [11,10,3,8,4,6]
+            r = 0
+        for i in range(6):
+            r+=tr[bvid[s[i]]] * 58 ** i
+
+        return (r-add)^xor
+
     # 观看
+    @is_bv
     def watch(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
@@ -439,6 +473,7 @@ class Bilibili:
         return False
 
     # 点赞
+    @is_bv
     def like(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like"
@@ -461,6 +496,7 @@ class Bilibili:
             return False
 
     # 投币
+    @is_bv
     def reward(self, aid, double=True):
         # aid = 稿件av号
         # double = 双倍投币
@@ -485,6 +521,7 @@ class Bilibili:
             return self.reward(aid, False) if double else False
 
     # 收藏
+    @is_bv
     def favour(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/v2/fav/folder"
@@ -516,6 +553,7 @@ class Bilibili:
             return False
 
     # 三连推荐
+    @is_bv
     def combo(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like/triple"
@@ -537,6 +575,7 @@ class Bilibili:
             return False
 
     # 分享
+    @is_bv
     def share(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/share/add"
@@ -606,6 +645,7 @@ class Bilibili:
             return False
 
     # 弹幕发送
+    @is_bv
     def danmaku_post(self, aid, message, page=1, moment=-1):
         # aid = 稿件av号
         # message = 弹幕内容
@@ -1544,6 +1584,7 @@ def main():
         print("凭据已更新")
     queue.put(None)
     export_process.join()
+
 
 if __name__ == "__main__":
     freeze_support()
