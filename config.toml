@@ -43,33 +43,33 @@ enable = false # 开关
 # 观看
 [watch]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
 
 # 点赞
 [like]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
 
 # 投币
 [reward]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
-double = [false, true] # 双倍投币
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
+double = [false, true, false] # 双倍投币
 
 # 收藏
 [favour]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
 
 # 三连推荐
 [combo]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
 
 # 分享
 [share]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
 
 # 关注
 [follow]
@@ -85,10 +85,10 @@ mid = [2, 208259] # 被关注用户UID
 # 弹幕发送
 [danmaku_post]
 enable = false # 开关
-aid = [120040, 21322566] # 稿件av号
-message = ["哔哩哔哩 (゜-゜)つロ 干杯~", "哔哩哔哩 (゜-゜)つロ 干杯~"] # 弹幕内容
-page = [1, 1] # 分P
-moment = [-1, -1] # 弹幕发送时间(为-1则随机选择发送时间)
+aid = ["120040", "21322566", "BV17x411w7KC"] # 稿件av/bv号
+message = ["哔哩哔哩 (゜-゜)つロ 干杯~", "哔哩哔哩 (゜-゜)つロ 干杯~", "哔哩哔哩 (゜-゜)つロ 干杯~"] # 弹幕内容
+page = [1, 1, 1] # 分P
+moment = [-1, -1, -1] # 弹幕发送时间(为-1则随机选择发送时间)
 
 # 评论点赞
 [comment_like]

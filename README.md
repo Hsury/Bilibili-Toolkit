@@ -5,7 +5,7 @@
 <h1 align="center">- Bilibili Toolkit -</h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/version-2020.7.4-green.svg?longCache=true&style=for-the-badge">
+<img src="https://img.shields.io/badge/version-2020.7.20-green.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/badge/license-SATA-blue.svg?longCache=true&style=for-the-badge">
 <img src="https://img.shields.io/travis/com/Hsury/Bilibili-Toolkit?style=for-the-badge">
 </p>
@@ -24,15 +24,15 @@
 |get_user_info       |2019/9/15      |获取用户信息                  |
 |set_privacy         |2018/7/24      |修改隐私设置                  |
 |silver_to_coin      |2018/8/8       |银瓜子兑换硬币                |
-|watch               |2018/8/30      |观看                          |
-|like                |2018/7/8       |点赞                          |
-|reward              |2018/11/22     |投币                          |
-|favour              |2018/6/20      |收藏                          |
-|combo               |2018/12/18     |三连推荐                      |
-|share               |2018/6/20      |分享                          |
+|watch               |2020/7/20      |观看                          |
+|like                |2020/7/20      |点赞                          |
+|reward              |2020/7/20      |投币                          |
+|favour              |2020/7/20      |收藏                          |
+|combo               |2020/7/20      |三连推荐                      |
+|share               |2020/7/20      |分享                          |
 |follow              |2018/7/8       |关注                          |
 |follow_batch        |2020/7/2       |批量关注                      |
-|danmaku_post        |2019/3/11      |弹幕发送                      |
+|danmaku_post        |2020/7/20      |弹幕发送                      |
 |comment_like        |2018/6/27      |评论点赞                      |
 |comment_post        |2019/8/3       |评论发表                      |
 |dynamic_like        |2018/6/29      |动态点赞                      |
@@ -64,7 +64,7 @@ cd Bilibili-Toolkit
 nano config.toml
 ```
 
-2. 安装Python 3.6/3.7，并使用pip安装依赖
+2. 安装Python 3.6或更高版本，并使用pip安装依赖
 
 ```
 pip install -r requirements.txt -U -i https://pypi.tuna.tsinghua.edu.cn/simple
@@ -104,14 +104,9 @@ QQ群：[956399361](https://jq.qq.com/?_wv=1027&k=5BO0c7o)
 
 ## 捐赠
 
-作者在本项目的开发过程中投入了大量的时间与精力，且验证码识别服务器的运行也需要一定的成本
-
-若本项目帮助到了您，为您带来了直接或间接的收益，不要吝啬请我喝几杯~~妹汁~~喔 (=・ω・=)
-
 <p align="center">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay.png" width="250">
 <img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_wechat.png" width="250">
-<img src="https://cdn.kagamiz.com/Bilibili-Toolkit/donate_alipay_redpacket.png" width="250">
 </p>
 
 ## 鸣谢
