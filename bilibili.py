@@ -20,6 +20,7 @@ banner = r"""
 
 import base64
 import chardet
+import functools
 import hashlib
 import json
 import os
@@ -33,7 +34,6 @@ import sys
 import threading
 import time
 import toml
-import functools
 from multiprocessing import freeze_support, Manager, Pool, Process
 from selenium import webdriver
 from urllib import parse
@@ -41,7 +41,7 @@ from urllib import parse
 __author__ = "Hsury"
 __email__ = "i@hsury.com"
 __license__ = "SATA"
-__version__ = "2020.7.4"
+__version__ = "2020.7.20"
 
 class Bilibili:
     app_key = "bca7e84c2d947ac6"
@@ -113,6 +113,26 @@ class Bilibili:
         response = self._requests("post", url, json=payload)
         return response['message'] if response and response.get("code") == 0 else None
 
+    def __bvid_handle(args_index=None, kwargs_key="aid"):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                self = args[0]
+                if args_index is not None and args_index < len(args):
+                    result = Bilibili.bvid_to_aid(args[args_index])
+                    if result:
+                        args = list(args)
+                        self._log(f"{args[args_index]}被自动转换为av{result}")
+                        args[args_index] = result
+                if kwargs_key is not None and kwargs_key in kwargs:
+                    result = Bilibili.bvid_to_aid(kwargs[kwargs_key])
+                    if result:
+                        self._log(f"{kwargs[kwargs_key]}被自动转换为av{result}")
+                        kwargs[kwargs_key] = result
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+
     def __push_to_queue(self, manufacturer, data):
         if self.__queue:
             self.__queue.put({
@@ -121,6 +141,24 @@ class Bilibili:
                 'manufacturer': manufacturer,
                 'data': data,
             })
+
+    @staticmethod
+    def bvid_to_aid(bvid="BV17x411w7KC"):
+        # Snippet source: https://www.zhihu.com/question/381784377/answer/1099438784
+        table = "fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF"
+        tr = {}
+        for i in range(58):
+            tr[table[i]] = i
+        s = [11, 10, 3, 8, 4, 6]
+        xor = 177451812
+        add = 8728348608
+        r = 0
+        try:
+            for i in range(6):
+                r += tr[bvid[s[i]]] * 58 ** i
+            return (r - add) ^ xor
+        except:
+            return None
 
     @staticmethod
     def calc_sign(param):
@@ -381,40 +419,8 @@ class Bilibili:
             else:
                 self._log(f"银瓜子兑换硬币(PC通道)失败 {response}")
 
-    def is_bv(func):
-        def decorator(func):
-            @functools.wraps(func)
-            def wrapper(self, *args, **kw):
-                args = list(args)
-                if type(args[0]) == str and args[0][0:2] == 'BV':
-                    args[0] = self.decode_bv(args[0])
-                args = tuple(args)
-                return func(self, *args, **kw)
-            return wrapper
-        return decorator(func)
-    """
-    作者：mcfx
-    链接：https://www.zhihu.com/question/381784377/answer/1099438784
-    来源：知乎
-    著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。    
-    """
-    def decode_bv(self, bvid):
-        table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
-        tr = {}
-        xor=177451812
-        add=8728348608
-
-        for i in range(58):
-            tr[table[i]] = i
-            s = [11,10,3,8,4,6]
-            r = 0
-        for i in range(6):
-            r+=tr[bvid[s[i]]] * 58 ** i
-
-        return (r-add)^xor
-
     # 观看
-    @is_bv
+    @__bvid_handle(1, "aid")
     def watch(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/view?aid={aid}"
@@ -473,7 +479,7 @@ class Bilibili:
         return False
 
     # 点赞
-    @is_bv
+    @__bvid_handle(1, "aid")
     def like(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like"
@@ -496,7 +502,7 @@ class Bilibili:
             return False
 
     # 投币
-    @is_bv
+    @__bvid_handle(1, "aid")
     def reward(self, aid, double=True):
         # aid = 稿件av号
         # double = 双倍投币
@@ -521,7 +527,7 @@ class Bilibili:
             return self.reward(aid, False) if double else False
 
     # 收藏
-    @is_bv
+    @__bvid_handle(1, "aid")
     def favour(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/v2/fav/folder"
@@ -553,7 +559,7 @@ class Bilibili:
             return False
 
     # 三连推荐
-    @is_bv
+    @__bvid_handle(1, "aid")
     def combo(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/archive/like/triple"
@@ -575,7 +581,7 @@ class Bilibili:
             return False
 
     # 分享
-    @is_bv
+    @__bvid_handle(1, "aid")
     def share(self, aid):
         # aid = 稿件av号
         url = f"{self.protocol}://api.bilibili.com/x/web-interface/share/add"
@@ -645,7 +651,7 @@ class Bilibili:
             return False
 
     # 弹幕发送
-    @is_bv
+    @__bvid_handle(1, "aid")
     def danmaku_post(self, aid, message, page=1, moment=-1):
         # aid = 稿件av号
         # message = 弹幕内容
@@ -1584,7 +1590,6 @@ def main():
         print("凭据已更新")
     queue.put(None)
     export_process.join()
-
 
 if __name__ == "__main__":
     freeze_support()
