@@ -50,13 +50,13 @@
 
 ### 二进制版本
 
-从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，修改默认配置文件config.toml后运行可执行文件bilibili即可
+从[Release页面](https://github.com/Hsury/Bilibili-Toolkit/releases)下载并解压与您的平台适配的压缩包，参考默认配置文件config.sample.toml，**新建**一个config.toml文件后运行可执行文件bilibili即可
 
 *若要加载非默认配置文件，将其路径作为命令行参数传入即可*
 
 ### 源代码版本
 
-1. 克隆或[下载](https://github.com/Hsury/Bilibili-Toolkit/archive/master.zip)本代码仓库，并修改默认配置文件config.toml
+1. 克隆或[下载](https://github.com/Hsury/Bilibili-Toolkit/archive/master.zip)本代码仓库，参考默认配置文件config.sample.toml，**新建**一个config.toml文件
 
 ```
 git clone https://github.com/Hsury/Bilibili-Toolkit.git
@@ -80,7 +80,7 @@ python bilibili.py
 
 1. 安装Docker
 
-2. [下载](https://raw.githubusercontent.com/Hsury/Bilibili-Toolkit/master/config.toml)默认配置文件config.toml并根据需求修改
+2. [参考](https://raw.githubusercontent.com/Hsury/Bilibili-Toolkit/master/config.toml)默认配置文件config.sample.toml，并**新建**一个config.toml文件
 
 3. 启动容器，并挂载配置文件
 
