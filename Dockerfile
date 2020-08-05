@@ -1,6 +1,6 @@
 FROM python:3.6-alpine
 
-MAINTAINER zsnmwy <szlszl35622@gmail.com>
+LABEL zsnmwy <szlszl35622@gmail.com>
 
 ENV LIBRARY_PATH=/lib:/usr/lib
 
