@@ -247,7 +247,9 @@ class Bilibili:
             while True:
                 key = get_key()
                 key_hash, pub_key = key['key_hash'], key['pub_key']
-                url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
+                #url = f"{self.protocol}://passport.bilibili.com/api/v2/oauth2/login"
+                #reference https://github.com/lkeme/BiliHelper-personal/blob/5a7b0a411570a43d20a11acbfc1822184fcaec72/src/plugin/Login.php#L291-L295
+                url = f"{self.protocol}://passport.bilibili.com/x/passport-login/oauth2/login"
                 param = f"appkey={Bilibili.app_key}&password={parse.quote_plus(base64.b64encode(rsa.encrypt(f'{key_hash}{self.password}'.encode(), pub_key)))}&username={parse.quote_plus(self.username)}"
                 payload = f"{param}&sign={self.calc_sign(param)}"
                 headers = {'Content-type': "application/x-www-form-urlencoded"}
