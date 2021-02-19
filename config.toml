@@ -82,6 +82,16 @@ secret = [true, false] # 悄悄关注
 enable = false # 开关
 mid = [2, 208259] # 被关注用户UID
 
+# 拉黑
+[ban]
+enable = false # 开关
+mid = [12345678, 23456789] # 被拉黑用户UID
+
+# 批量拉黑
+[ban_batch]
+enable = false # 开关
+mid = [12345678, 23456789] # 被拉黑用户UID
+
 # 弹幕发送
 [danmaku_post]
 enable = false # 开关

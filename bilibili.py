@@ -650,6 +650,51 @@ class Bilibili:
             self._log(f"用户{', '.join(map(str, mids))}批量关注失败 {response}")
             return False
 
+    # 拉黑
+    def ban(self, mid):
+        # mid = 被拉黑用户UID
+        url = f"{self.protocol}://api.bilibili.com/x/relation/modify"
+        payload = {
+            'fid': mid,
+            'act': 5,
+            're_src': 15,
+            'csrf': self.get_csrf(),
+        }
+        headers = {
+            'Host': "api.bilibili.com",
+            'Origin': "https://space.bilibili.com",
+            'Referer': f"https://space.bilibili.com/{mid}/",
+        }
+        response = self._requests("post", url, data=payload, headers=headers)
+        if response and response.get("code") == 0:
+            self._log(f"用户{mid}拉黑成功")
+            return True
+        else:
+            self._log(f"用户{mid}拉黑失败 {response}")
+            return False
+
+    # 批量拉黑
+    def ban_batch(self, mids):
+        # mids = 被拉黑用户UID
+        url = f"{self.protocol}://api.bilibili.com/x/relation/batch/modify"
+        payload = {
+            'fids': ",".join(map(str, mids)),
+            'act': 5,
+            'csrf': self.get_csrf(),
+            're_src': 222,      #　理论上这个值不起作用．．．
+        }
+        headers = {
+            'Host': "api.bilibili.com",
+            'Referer': "https://www.bilibili.com/blackboard/live/activity-NfUS01P8.html",
+        }
+        response = self._requests("post", url, data=payload, headers=headers)
+        if response and response.get("code") == 0:
+            self._log(f"用户{', '.join(map(str, mids))}批量拉黑成功")
+            return True
+        else:
+            self._log(f"用户{', '.join(map(str, mids))}批量拉黑失败 {response}")
+            return False
+
     # 弹幕发送
     @__bvid_handle(1, "aid")
     def danmaku_post(self, aid, message, page=1, moment=-1):
@@ -1458,6 +1503,10 @@ def wrapper(arg):
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow, 5, list(zip(config['follow']['mid'], config['follow']['secret'])))))
         if config['follow_batch']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.follow_batch, 5, list((config['follow_batch']['mid'][i:i + 50],) for i in range(0, len(config['follow_batch']['mid']), 50)))))
+        if config['ban']['enable']:
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.ban, 5, list(zip(config['ban']['mid'])))))
+        if config['ban_batch']['enable']:
+            threads.append(threading.Thread(target=delay_wrapper, args=(instance.ban_batch, 5, list((config['ban_batch']['mid'][i:i + 50],) for i in range(0, len(config['ban_batch']['mid']), 50)))))
         if config['danmaku_post']['enable']:
             threads.append(threading.Thread(target=delay_wrapper, args=(instance.danmaku_post, 5, list(zip(config['danmaku_post']['aid'], config['danmaku_post']['message'], config['danmaku_post']['page'], config['danmaku_post']['moment'])))))
         if config['comment_like']['enable']:
